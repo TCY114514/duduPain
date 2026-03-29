@@ -35,9 +35,9 @@
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
         #count-val { font-size: 3rem; color: var(--primary); font-weight: 900; display: block; margin-top: 5px; }
         .report { background: #fff5f5; padding: 15px; border-radius: 15px; text-align: left; border-left: 5px solid var(--primary); font-size: 0.85rem; line-height: 1.6; }
-        .history { max-height: 150px; overflow-y: auto; text-align: left; padding: 10px; border-radius: 12px; background: #f8f9fa; font-size: 0.75rem; }
+        .history { max-height: 300px; overflow-y: auto; text-align: left; padding: 10px; border-radius: 12px; background: #f8f9fa; font-size: 0.75rem; }
         .history-item { padding: 8px 0; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center; }
-        .loc-tag { color: #ff8787; font-weight: bold; }
+        .loc-tag { color: #ff8787; font-weight: bold; font-family: serif; }
         canvas { margin-top: 10px; max-height: 180px; }
         .footer-info { margin-top: 10px; font-size: 0.65rem; color: #ced4da; text-align: left; line-height: 1.4; }
     </style>
@@ -46,7 +46,7 @@
 
     <div class="card">
         <h1>🤣 痛了吗？</h1>
-        <div class="quote">“大葱专属痛感监测站”</div>
+        <div class="quote">“泰拉痛感分布式监测站”</div>
         
         <div class="btn-wrapper">
             <button id="btn-main">
@@ -68,16 +68,16 @@
 
     <div class="card">
         <h3 style="margin:0 0 10px 0; font-size:1rem;">📝 痛感日报</h3>
-        <div id="report-text" class="report">正在连接腾讯云加速节点...</div>
+        <div id="report-text" class="report">数据链路初始化中...</div>
     </div>
 
     <div class="card">
-        <h3 style="margin:0 0 10px 0; font-size:1rem;">📜 历史轨迹</h3>
+        <h3 style="margin:0 0 10px 0; font-size:1rem;">📜 历史轨迹 (近50条)</h3>
         <div id="history-list" class="history">加载中...</div>
         <div class="footer-info">
-            <b>[SYSTEM LOG]</b> 项目：肚肚痛监测站 (Scallion Protocol)<br>
+            <b>[SYSTEM LOG]</b> 项目：Scallion Protocol<br>
             <b>受试者：</b> 大葱 (Scallion)<br>
-            <b>技术：</b> Supabase + Tencent Cloud COS
+            <b>定位模式：</b> 随机泰拉坐标映射
         </div>
     </div>
 
@@ -89,45 +89,38 @@
         const sbClient = supabase.createClient(SB_URL, SB_KEY);
         let myChart = null;
 
-// 获取中文地理位置 (字节跳动/火山引擎官方接口 - 极速且支持 HTTPS)
-async function getChineseLocation() {
-    try {
-        // 这个接口是字节跳动提供的，国内访问极快且不需要 API Key
-        const response = await fetch('https://is.snssdk.com/ip/ip_dict/v1/info', {
-            method: 'GET',
-            mode: 'cors' 
-        });
-        const result = await response.json();
-        
-        // 解析字节跳动的返回格式
-        if (result && result.data) {
-            const d = result.data;
-            // 拼接成：江苏省南京市 或者 辽宁省大连市
-            const cityStr = `${d.province || ''}${d.city || ''}`;
-            return cityStr || "未知位置";
+        // 地名库
+        const TERRA_LOCS = [
+            "阿戈尔", "玻利瓦尔", "多索雷斯", "东国", "二户城", "姬户城", "新安芸市", "杜林", "际崖城", "天际城",
+            "哥伦比亚", "麦克斯特区", "特里蒙", "提卡伦多", "纽莱堡市", "铸铁城", "加斯帕荒原", "卡西米尔",
+            "卡瓦莱利亚基", "茨沃涅克", "黄金平原", "滴水村", "卡兹戴尔", "卡兹戴尔城", "贝罗尼村", "拉特兰",
+            "司提望区", "安布罗修区", "法柏尔区", "莱塔尼亚", "沃伦姆德", "维谢海姆", "冬灵山脉", "雷姆必拓",
+            "钢铁萝卜城", "铁腕城", "米诺斯", "科林尼亚", "雅赛努斯", "拉刻代蒙", "阿克罗蒂村", "萨尔贡",
+            "阿卡胡拉", "长泉镇", "费坤城", "瓦伊凡地区", "凯尔图恩谷地", "萨米", "察帕特", "冬牙群山",
+            "原初之地", "维多利亚", "伦蒂尼姆", "多伦郡", "小丘郡", "红脊镇", "石高原野", "乌萨斯", "圣骏堡",
+            "切尔诺伯格", "涅瓦湖", "中心矿区", "谢拉格", "图里卡姆", "喀兰峰", "少女峰", "马特洪峰", "叙拉古",
+            "七丘城", "新沃尔西尼", "帕勒莫", "炎国", "龙门", "尚蜀", "玉门", "勾吴城", "姜齐城", "天岳", "雷池",
+            "伊比利亚", "盐风城", "潮石镇", "格兰法洛", "颂圣棱堡", "汐斯塔", "因非冰原", "焚风热土", "常暗裂谷",
+            "苍白海", "阿加门", "骏鹰王国", "高卢", "檀"
+        ];
+
+        // 随机获取地名
+        function getRandomTerraLoc() {
+            const loc = TERRA_LOCS[Math.floor(Math.random() * TERRA_LOCS.length)];
+            return `IP属地：${loc}`;
         }
-        return "位置解析中";
-    } catch (e) {
-        console.error("定位插件罢工了:", e);
-        // 如果字节也挂了，保底方案：返回一个随机幽默地址
-        const fallback = ["火星发射站", "信号屏蔽区", "大葱的秘密基地"];
-        return fallback[Math.floor(Math.random() * fallback.length)];
-    }
-}
-        
+
         // 点击按钮
         document.getElementById('btn-main').onclick = async () => {
             if (navigator.vibrate) navigator.vibrate(60);
-            
-            // 显示加载状态（防止大葱狂点）
             const btn = document.getElementById('btn-main');
             btn.style.opacity = "0.7";
             
-            const city = await getChineseLocation();
+            const randomLoc = getRandomTerraLoc();
 
             const { error } = await sbClient
                 .from('records')
-                .insert([{ location: city }]);
+                .insert([{ location: randomLoc }]);
 
             btn.style.opacity = "1";
             if (!error) fetchData();
@@ -143,18 +136,33 @@ async function getChineseLocation() {
                 if (error) throw error;
 
                 const todayRecords = records.filter(r => new Date(r.created_at).toDateString() === new Date().toDateString());
-                document.getElementById('count-val').innerText = todayRecords.length;
+                const count = todayRecords.length;
+                document.getElementById('count-val').innerText = count;
                 
-                let evalText = todayRecords.length > 15 ? "🚑 级别：大葱笑疯了，建议人工呼吸" : 
-                               todayRecords.length > 5 ? "🔥 级别：大葱进入痉挛模式" : "🌱 级别：大葱情绪稳定";
+                // 评价系统逻辑
+                let evalText = "";
+                if (count > 1433223) {
+                    evalText = "🚑 鬼手级别：让大葱痛到这辈子玩卫戍协议抓不到大C 转头发现自家大C队友人手8个精锐";
+                } else if (count > 50) {
+                    evalText = "💀 级别：大葱已与大地母亲合二为一，痛觉中枢宣告下班";
+                } else if (count > 30) {
+                    evalText = "🌋 级别：源石结晶在肚子里蹦迪，建议火速寻找医疗干员";
+                } else if (count > 15) {
+                    evalText = "🔥 级别：笑穴被点，建议大葱立刻停止呼吸（误）";
+                } else if (count > 5) {
+                    evalText = "🌱 级别：轻微痉挛，尚在生理承受范围内";
+                } else {
+                    evalText = "💤 级别：岁月静好，肚皮平稳";
+                }
                 
                 document.getElementById('report-text').innerHTML = `
-                    <b>累计次数：</b> ${todayRecords.length} 次<br>
+                    <b>累计次数：</b> ${count} 次<br>
                     <b>痛感评价：</b> ${evalText}<br>
-                    <b>状态：</b> 国内加速节点已连接 ✅
+                    <b>链路：</b> 泰拉多维接入 ✅
                 `;
 
-                document.getElementById('history-list').innerHTML = records.slice(0, 10).map(r => `
+                // 显示近50条记录
+                document.getElementById('history-list').innerHTML = records.slice(0, 50).map(r => `
                     <div class="history-item">
                         <span>🕒 ${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                         <span class="loc-tag">${r.location}</span>
@@ -163,7 +171,7 @@ async function getChineseLocation() {
 
                 renderChart(todayRecords);
             } catch (err) {
-                document.getElementById('report-text').innerHTML = "❌ 数据库连接失败";
+                document.getElementById('report-text').innerHTML = "❌ 信号塔故障（数据库连接失败）";
             }
         }
 
@@ -198,7 +206,7 @@ async function getChineseLocation() {
         }
 
         fetchData();
-        setInterval(fetchData, 30000); // 30秒刷新一次，更实时
+        setInterval(fetchData, 30000); 
     </script>
 </body>
 </html>
