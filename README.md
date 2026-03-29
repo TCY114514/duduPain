@@ -1,18 +1,52 @@
-🛠️ 项目：肚肚痛监测站（Scallion 协议）
-项目描述：
-一个基于 Serverless 架构的全栈应用程序，专门用于实时追踪我们的受试者 —— 大葱 (Scallion) 因大笑而导致的生理性腹痛。
+💢 Scallion Protocol (肚肚痛监测站) v4.0
+"痛觉是生命的信号，而记录是幽默的升华。" > 本项目是专门为受试者 “大葱” (Scallion) 开发的分布式痛感实时监测系统。
 
-技术栈 (Tech Stack)：
+🚀 核心架构 (Core Architecture)
+本项目采用了去中心化的数据采集与中心化可视化的混合架构：
 
-前端 (Frontend)：HTML5, CSS3 (移动端优先响应式设计), Vanilla JS。
+前端渲染：基于 Vanilla JS + CSS3 变量构建的响应式 UI。
 
-数据库 (Database)：Supabase (PostgreSQL 驱动，已禁用 RLS 权限以实现最大程度的同步响应)。
+数据中枢：利用 Supabase 实现毫秒级的实时数据同步。
 
-托管 (Hosting)：Vercel (通过 GitHub 触发的持续部署 CD)。
+地理映射：自研的 “泰拉坐标随机映射引擎”，将痛感点位实时映射至泰拉大陆（Terra） 90+ 个核心行政区。
 
-数据可视化 (Analytics)：Chart.js，用于生成实时时间序列数据波动图。
+可视化层：Chart.js 双维度驱动，支持 24h 小时波动 与 7-Day 每日趋势 分析。
 
-地理定位 (Geolocation)：基于 ipapi.co 接口，实现受试者点击时的地理坐标捕捉。
+🛠️ 关键特性 (Feature Set)
+1. 痛感实时采集
+支持移动端触觉反馈（Vibration API）。
 
-用户故事 (User Story)：
-当 大葱 (Scallion) 笑到腹部肌肉产生痉挛（即“肚肚痛”）时，他会触发 btn-main 交互元素。系统随后会抓取其当前地理位置，生成 UTC 时间戳，并将新纪录插入 Supabase 的 records 数据表中。前端每 60 秒自动轮询更新，实时呈现累计数值与最新的痛感分布曲线。
+防抖动（Debounce）处理，确保在高频痛感下链路的稳定性。
+
+2. 泰拉“地域偏见”情报站
+内置多线程随机播放引擎，每 15 秒轮换一次关于泰拉大陆各地的“扎心”段子。
+
+涵盖从阿戈尔的精致到乌萨斯的伏特加等 20+ 项深度地域梗。
+
+3. 多级评估算法
+系统会根据今日累计次数自动触发不同级别的预警：
+
+Safe: 岁月静好，肚皮平稳。
+
+High Risk: 源石结晶在肚子里蹦迪。
+
+Protocol Error: 1433223 次触发 —— 激活“鬼手”级别诅咒（卫戍协议专用）。
+
+📡 部署说明 (Deployment)
+Bash
+# 克隆本项目
+git clone https://github.com/your-repo/dudu-pain.git
+
+# 关键配置信息
+# SB_URL: 接入 Supabase 云端实例
+# SB_KEY: 公钥凭证
+托管建议：建议使用 Cloudflare Pages 或腾讯云 WebHosting，以确保在中国大陆地区的极速访问。
+
+📜 协议与声明 (License)
+受试者限定：本协议仅对 大葱 生效。
+
+数据所有权：所有痛感数据归大葱所有，监测站仅负责数字化呈现。
+
+免责声明：若因段子太好笑导致痛感加剧，本系统概不负责。
+
+[SYSTEM LOG]：数据链路已就绪。大葱，请开始你的表演。
