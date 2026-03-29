@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
+    <title>肚肚痛监测站 💢</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #ff6b6b;
+            --bg: #fff9db;
+            --card-bg: #ffffff;
+            --text: #495057;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 15px;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 卡片容器：适配移动端宽度 */
+        .card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 480px;
+            border-radius: 25px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.12);
+            margin-bottom: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        h1 { color: var(--primary); margin: 0 0 5px 0; font-size: 1.8rem; }
+        .quote { font-style: italic; color: #999; font-size: 0.8rem; margin-bottom: 15px; }
+
+        /* 核心按钮：水平垂直绝对居中 */
+        .btn-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 0;
+            width: 100%;
+        }
+
+        #btn-main {
+            width: 150px; height: 150px;
+            border-radius: 50%; border: none;
+            background: linear-gradient(135deg, #ff8787, #fa5252);
+            color: white; font-size: 1.2rem; font-weight: bold;
+            cursor: pointer; 
+            box-shadow: 0 10px 0 #c92a2a, 0 15px 25px rgba(255,107,107,0.3);
+            transition: 0.1s; outline: none;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            animation: pulse 2s infinite;
+        }
+
+        #btn-main:active { 
+            transform: translateY(6px); 
+            box-shadow: 0 4px 0 #c92a2a;
+            animation: none;
+        }
+
+        #btn-main span { font-size: 2.5rem; display: block; margin-bottom: 2px; }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        #count-val { font-size: 3rem; color: var(--primary); font-weight: 900; display: block; margin-top: 5px; }
+
+        /* 报告与历史列表 */
+        .report { background: #fff5f5; padding: 15px; border-radius: 15px; text-align: left; border-left: 5px solid var(--primary); font-size: 0.85rem; line-height: 1.6; }
+        .history { max-height: 150px; overflow-y: auto; text-align: left; padding: 10px; border-radius: 12px; background: #f8f9fa; font-size: 0.75rem; }
+        .history-item { padding: 8px 0; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center; }
+        .loc-tag { color: #ff8787; font-weight: bold; }
+
+        canvas { margin-top: 10px; max-height: 180px; }
+
+        /* 针对超小屏幕优化 */
+        @media (max-width: 370px) {
+            h1 { font-size: 1.5rem; }
+            #btn-main { width: 130px; height: 130px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>🤣 痛了吗？</h1>
+        <div class="quote">“开心的时候说‘我肚肚痛’来表示笑得难受”</div>
+        
+        <div class="btn-wrapper">
+            <button id="btn-main">
+                <span>😂</span>
+                肚肚痛了！
+            </button>
+        </div>
+
+        <div style="font-size: 1rem; border-top: 1px solid #eee; padding-top: 15px;">
+            今日痛感累计
+            <span id="count-val">0</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0; font-size:1rem;">📈 痛感波动走势</h3>
+        <canvas id="chartCanvas"></canvas>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0; font-size:1rem;">📝 痛感日报</h3>
+        <div id="report-text" class="report">正在连接云端监测站...</div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0; font-size:1rem;">📜 历史轨迹 (Last 10)</h3>
+        <div id="history-list" class="history">加载中...</div>
+    </div>
+
+    <script>
+        // === 1. 配置区 (填入你的信息) ===
+        const SB_URL = "https://nbhaqiynakkdlequbpbh.supabase.co"; 
+        const SB_KEY = "sb_publishable_MfHndIpykrX79UrvosT9Nw_JxCYYfbp"; 
+        
+        const sbClient = supabase.createClient(SB_URL, SB_KEY);
+        let myChart = null;
+
+        // 获取地理位置的函数
+        async function getCityLocation() {
+            try {
+                // 使用 https 友好的定位接口
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                return data.city ? `${data.region}·${data.city}` : "未知坐标";
+            } catch (e) {
+                return "神秘地点";
+            }
+        }
+
+        // 点击按钮逻辑
+        document.getElementById('btn-main').onclick = async () => {
+            if (navigator.vibrate) navigator.vibrate(60);
+            
+            // 实时获取点击者的位置
+            const city = await getCityLocation();
+
+            const { error } = await sbClient
+                .from('records')
+                .insert([{ location: city }]);
+
+            if (error) {
+                alert("同步失败！请检查Supabase RLS权限是否已关闭。");
+            } else {
+                fetchData();
+            }
+        };
+
+        // 数据抓取逻辑
+        async function fetchData() {
+            try {
+                const { data: records, error } = await sbClient
+                    .from('records')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const todayRecords = records.filter(r => new Date(r.created_at).toDateString() === new Date().toDateString());
+
+                // 更新数字
+                document.getElementById('count-val').innerText = todayRecords.length;
+                
+                // 更新日报
+                let evalText = todayRecords.length > 15 ? "🚑 级别：笑到抽搐，快去揉肚子！" : 
+                               todayRecords.length > 5 ? "🔥 级别：笑点活跃，今日心情大好" : "🌱 级别：平和的快乐";
+                document.getElementById('report-text').innerHTML = `
+                    <b>累计次数：</b> ${todayRecords.length} 次<br>
+                    <b>痛感评价：</b> ${evalText}<br>
+                    <b>同步状态：</b> 实时连接中 ✨
+                `;
+
+                // 历史列表
+                document.getElementById('history-list').innerHTML = records.slice(0, 10).map(r => `
+                    <div class="history-item">
+                        <span>🕒 ${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                        <span class="loc-tag">${r.location} ✅</span>
+                    </div>
+                `).join('') || "暂无记录";
+
+                renderChart(todayRecords);
+            } catch (err) {
+                document.getElementById('report-text').innerHTML = "❌ 连接失败。请确保在 https 环境下运行并配置了正确的 Key。";
+            }
+        }
+
+        // 渲染图表
+        function renderChart(todayData) {
+            const ctx = document.getElementById('chartCanvas').getContext('2d');
+            const dataCounts = Array(24).fill(0);
+            todayData.forEach(r => dataCounts[new Date(r.created_at).getHours()]++);
+
+            const currentHour = new Date().getHours();
+            const labels = Array.from({length: currentHour + 1}, (_, i) => i + ":00");
+            const finalData = dataCounts.slice(0, currentHour + 1);
+
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: finalData,
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        fill: true, tension: 0.4, pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        fetchData();
+        setInterval(fetchData, 60000); // 每一分钟自动刷新一次
+    </script>
+</body>
+</html>
