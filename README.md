@@ -1,4 +1,4 @@
-💢 Scallion Protocol (肚肚痛监测站) v4.0
+💢 Scallion Protocol (肚肚痛监测站) v1.0
 "痛觉是生命的信号，而记录是幽默的升华。" > 本项目是专门为受试者 “大葱” (Scallion) 开发的分布式痛感实时监测系统。
 
 🚀 核心架构 (Core Architecture)
