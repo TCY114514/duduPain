@@ -89,26 +89,41 @@
         const sbClient = supabase.createClient(SB_URL, SB_KEY);
         let myChart = null;
 
-        // 获取中文地理位置 (国内增强版)
-        async function getChineseLocation() {
+        // 获取中文地理位置 (搜狐增强版 - 兼容性最高)
+async function getChineseLocation() {
+    return new Promise((resolve) => {
+        // 创建一个临时脚本标签
+        const script = document.createElement('script');
+        // 使用搜狐接口，它返回：var returnCitySN = {"cip": "xxx", "cid": "xxx", "cname": "北京市"};
+        script.src = 'https://pv.sohu.com/cityjson?ie=utf-8';
+        
+        script.onload = () => {
             try {
-                // 使用太平洋电脑网 IP 接口，国内环境极速且返回中文
-                const script = document.createElement('script');
-                script.src = 'https://whois.pconline.com.cn/ipJson.jsp?callback=getIpAddr';
-                document.body.appendChild(script);
-
-                return new Promise((resolve) => {
-                    window.getIpAddr = function(json) {
-                        document.body.removeChild(script);
-                        resolve(json.addr || "未知位置");
-                    };
-                    // 超时处理
-                    setTimeout(() => resolve("神秘地点"), 2000);
-                });
+                // 接口加载成功后，直接读取全局变量 returnCitySN
+                const location = window.returnCitySN ? window.returnCitySN.cname : "未知位置";
+                document.body.removeChild(script);
+                resolve(location);
             } catch (e) {
-                return "定位失败";
+                resolve("解析失败");
             }
-        }
+        };
+
+        script.onerror = () => {
+            if (document.body.contains(script)) document.body.removeChild(script);
+            resolve("网络波动");
+        };
+
+        document.body.appendChild(script);
+
+        // 3秒超时保护
+        setTimeout(() => {
+            if (document.body.contains(script)) {
+                document.body.removeChild(script);
+                resolve("神秘地点");
+            }
+        }, 3000);
+    });
+}
 
         // 点击按钮
         document.getElementById('btn-main').onclick = async () => {
