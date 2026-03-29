@@ -89,29 +89,21 @@
         const sbClient = supabase.createClient(SB_URL, SB_KEY);
         let myChart = null;
 
-// 获取中文地理位置 (字节跳动/火山引擎官方接口 - 极速且支持 HTTPS)
+// 获取地理位置 (回归第一版：最稳方案)
 async function getChineseLocation() {
     try {
-        // 这个接口是字节跳动提供的，国内访问极快且不需要 API Key
-        const response = await fetch('https://is.snssdk.com/ip/ip_dict/v1/info', {
-            method: 'GET',
-            mode: 'cors' 
-        });
-        const result = await response.json();
+        // 第一版使用的 ipapi.co 虽然是国外的，但胜在返回格式标准
+        // 如果大葱那边访问这个接口慢，它会走下面的 catch 逻辑返回“未知地点”
+        const res = await fetch('https://ipapi.co/json/');
+        const data = await res.json();
         
-        // 解析字节跳动的返回格式
-        if (result && result.data) {
-            const d = result.data;
-            // 拼接成：江苏省南京市 或者 辽宁省大连市
-            const cityStr = `${d.province || ''}${d.city || ''}`;
-            return cityStr || "未知位置";
-        }
-        return "位置解析中";
+        // 第一版逻辑：如果能拿到城市名就显示，拿不到就保底
+        return data.city || data.region || "某个角落";
     } catch (e) {
-        console.error("定位插件罢工了:", e);
-        // 如果字节也挂了，保底方案：返回一个随机幽默地址
-        const fallback = ["火星发射站", "信号屏蔽区", "大葱的秘密基地"];
-        return fallback[Math.floor(Math.random() * fallback.length)];
+        // 如果接口被墙或超时，直接返回一个好玩的保底文案
+        console.log("接口连不上，启用保底文案");
+        const funLocs = ["大葱的秘密基地", "某个神秘角落", "信号屏蔽区"];
+        return funLocs[Math.floor(Math.random() * funLocs.length)];
     }
 }
 
