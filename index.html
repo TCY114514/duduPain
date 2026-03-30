@@ -3,77 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
-    <title>大葱的肚肚痛监测站 💢</title>
+    <title>🧅 大葱肚肚痛中心 | v12.0 极客分线</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #ff6b6b; --bg: #fff9db; --card-bg: #ffffff; --text: #495057; --accent: #ffd43b; --leaf: #51cf66; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'PingFang SC', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 100%; max-width: 500px; }
-        .card { background: var(--card-bg); width: 100%; border-radius: 25px; padding: 20px; box-shadow: 0 10px 25px rgba(255, 107, 107, 0.15); margin-bottom: 15px; text-align: center; border: 2px solid #fff; position: relative; }
+        .container { width: 100%; max-width: 500px; padding-bottom: 40px; }
+        .card { background: var(--card-bg); width: 100%; border-radius: 25px; padding: 20px; box-shadow: 0 10px 25px rgba(255, 107, 107, 0.1); margin-bottom: 15px; border: 3px solid #fff; position: relative; }
         
-        /* 顶部状态栏 */
-        .status-bar { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 10px; font-weight: bold; color: var(--leaf); }
-
-        /* 核心大圆按钮 */
+        /* 核心计数 */
         #btn-main {
-            width: 140px; height: 140px; border-radius: 50%; border: none;
+            width: 130px; height: 130px; border-radius: 50%; border: none;
             background: linear-gradient(135deg, #ff8787, #fa5252); color: white; font-size: 1.2rem; font-weight: bold; cursor: pointer; 
-            box-shadow: 0 8px 0 #c92a2a, 0 15px 20px rgba(255, 107, 107, 0.3); outline: none; transition: 0.1s;
+            box-shadow: 0 8px 0 #c92a2a; outline: none; transition: 0.1s; margin: 10px 0;
         }
         #btn-main:active { transform: translateY(6px); box-shadow: 0 2px 0 #c92a2a; }
-        #count-val { font-size: 4.5rem; color: var(--primary); font-weight: 900; display: block; margin: 10px 0; }
+        #count-val { font-size: 4rem; color: var(--primary); font-weight: 900; line-height: 1; }
 
-        /* 大葱语录留言板 */
-        .onion-msg { background: #f8f9fa; border-radius: 15px; padding: 12px; font-size: 0.85rem; color: #666; margin: 10px 0; border-left: 5px solid var(--leaf); font-style: italic; min-height: 45px; display: flex; align-items: center; justify-content: center; }
+        /* 📝 独立分表留言板 */
+        .board-container { background: #fdfae5; border: 2px solid var(--accent); border-radius: 20px; padding: 15px; margin: 15px 0; text-align: left; }
+        .board-title { font-size: 0.8rem; font-weight: bold; color: #e67e22; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        #msg-scroll-box { height: 120px; overflow-y: auto; font-size: 0.85rem; border-radius: 10px; padding: 10px; background: white; border: 1px inset #eee; scroll-behavior: smooth; }
+        .msg-item { padding: 6px 0; border-bottom: 1px dashed #eee; line-height: 1.4; display: flex; flex-direction: column; }
+        .msg-meta { font-size: 0.65rem; color: #999; margin-bottom: 2px; }
+        .msg-author { color: var(--leaf); font-weight: bold; font-family: monospace; }
+
+        /* ⌨️ 留言输入 */
+        .input-group { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+        input { border: 2px solid #eee; border-radius: 10px; padding: 10px; font-size: 0.8rem; outline: none; }
+        input:focus { border-color: var(--accent); }
+        #in-content { flex: 1 1 100%; }
+        #in-author { flex: 1; }
+        #btn-send { background: var(--leaf); color: white; border: none; border-radius: 10px; padding: 0 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        #btn-send:active { background: #2b8a3e; transform: scale(0.95); }
 
         /* 进度条笑话 */
-        .joke-card { border: 2px solid var(--accent); background: #fffdf5; text-align: left; overflow: hidden; }
-        .joke-header { color: #e67e22; font-weight: bold; font-size: 0.9rem; margin-bottom: 8px; border-bottom: 1px dashed var(--accent); }
-        .progress-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 5px; background: #eee; }
-        #progress-bar { width: 0%; height: 100%; background: var(--accent); }
+        .joke-card { border: 2px solid var(--accent); text-align: left; position: relative; overflow: hidden; padding-bottom: 25px; }
+        .prog-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 6px; background: #eee; }
+        #prog-fill { width: 0%; height: 100%; background: var(--accent); }
 
-        /* 图表与历史 */
-        .chart-container { height: 160px; width: 100%; margin-top: 10px; }
-        .history { max-height: 120px; overflow-y: auto; text-align: left; padding: 10px; background: #f8f9fa; font-size: 0.75rem; border-radius: 12px; margin-top: 10px; }
-        .loc-tag { color: var(--primary); font-weight: bold; background: #ffe3e3; padding: 2px 6px; border-radius: 4px; }
-        
-        /* 成就弹窗 */
-        #achievement { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: white; border: 3px solid var(--accent); padding: 10px 20px; border-radius: 50px; z-index: 100; transition: 0.5s; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .chart-box { height: 150px; width: 100%; }
+        .hist-list { max-height: 100px; overflow-y: auto; font-size: 0.75rem; text-align: left; background: #f8f9fa; border-radius: 10px; padding: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="achievement">⭐ 解锁成就：第一滴葱汁</div>
-
     <div class="container">
         <div class="card">
-            <div class="status-bar">
-                <span id="onion-status">健康大葱 🍀</span>
-                <span id="sanity-clock">理智恢复中...</span>
+            <h2 style="margin:0; font-size: 1.1rem; color: var(--leaf);">🟢 SCALLION CENTER v12.0</h2>
+            <button id="btn-main"><span>💥</span>肚肚痛了</button>
+            <div>今日累计 <span id="count-val">0</span> 次 🧅</div>
+            <div class="chart-box"><canvas id="chartHour"></canvas></div>
+        </div>
+
+        <div class="card">
+            <div class="board-container">
+                <div class="board-title"><span>💬 极客实时留言板</span><span id="sync-tag">⚡ 联机中</span></div>
+                <div id="msg-scroll-box">通讯连接中... 📡</div>
+                <div class="input-group">
+                    <input type="text" id="in-content" placeholder="输入极客留言...">
+                    <input type="text" id="in-author" placeholder="著名字号 (极客)">
+                    <button id="btn-send">发送</button>
+                </div>
             </div>
-            <h2 style="margin:0; font-size: 1.1rem; color: var(--leaf);">大葱监测站 v9.1</h2>
-            <div style="padding:15px 0;"><button id="btn-main">肚肚痛了！</button></div>
-            <div id="onion-msg" class="onion-msg">“今天也是元气满满的一天（大概）”</div>
-            <div>今日累计 <span id="count-val">0</span> 次</div>
-            <div class="chart-container"><canvas id="chartHour"></canvas></div>
         </div>
 
         <div class="card joke-card">
-            <div class="joke-header">✨ 泰拉地域偏见大赏</div>
-            <div id="joke-content" style="font-size: 0.85rem; line-height: 1.6; color: #6f5540; min-height: 60px;">载入中...</div>
-            <div class="progress-container"><div id="progress-bar"></div></div>
+            <div style="font-weight: bold; color: #e67e22; font-size: 0.85rem; margin-bottom: 8px;">🎭 泰拉地域偏见大赏</div>
+            <div id="joke-text" style="font-size: 0.85rem; line-height: 1.5; min-height: 60px;">载入解密中... 🕵️‍♀️</div>
+            <div class="prog-bg"><div id="prog-fill"></div></div>
         </div>
 
         <div class="card">
-            <h3 style="margin:0; font-size:0.9rem;">📅 最近七日痛感曲线</h3>
-            <div class="chart-container"><canvas id="chartDay"></canvas></div>
+            <h3 style="margin:0; font-size:0.85rem; color:#999;">📅 最近七日活跃分布图</h3>
+            <div class="chart-box"><canvas id="chartDay"></canvas></div>
         </div>
 
         <div class="card">
-            <h3 style="margin:0; font-size:0.9rem;">📜 历史轨迹</h3>
-            <div id="history-list" class="history">加载中...</div>
+            <h3 style="margin:0; font-size:0.85rem; color:#999;">📜 历史位置轨迹</h3>
+            <div id="hist-list" class="hist-list">...</div>
         </div>
     </div>
 
@@ -81,65 +91,73 @@
         const SB_URL = "https://nbhaqiynakkdlequbpbh.supabase.co"; 
         const SB_KEY = "sb_publishable_MfHndIpykrX79UrvosT9Nw_JxCYYfbp"; 
         const sbClient = supabase.createClient(SB_URL, SB_KEY);
-        let chartH = null, chartD = null, jokeTimer = 0;
-
-        const ONION_QUOTES = ["呜...又要变葱花了吗？", "感觉肚子里有源石虫在跳舞。", "快给大葱充电...", "这是大葱的第N次紧急避险。", "坚持住，大葱！", "需要摸摸头才能好。"];
-        const TERRA_LOCS = ["阿戈尔", "哥伦比亚", "拉特兰", "叙拉古", "炎国", "乌萨斯", "卡西米尔", "谢拉格", "维多利亚", "龙门"];
+        
+        let chartH = null, chartD = null, jokeProgress = 0;
         const JOKES = [
-            "<b>叙拉古：</b>永远不要在意面上挤番茄酱，否则会被塞进油桶。",
-            "<b>拉特兰：</b>纠纷全靠炸弹回声，爆炸不够清脆说明信仰不足。",
-            "<b>哥伦比亚：</b>路边的猫都能给你讲三分钟创投计划。",
-            "<b>乌萨斯：</b>这里没有感冒，只有伏特加纯度不够。"
+            "<b>叙拉古：</b>永远不要在意面上挤番茄酱，否则会被塞进油桶。🥫",
+            "<b>拉特兰：</b>纠纷全靠炸弹回声，爆炸不够清脆说明信仰不足。💣",
+            "<b>哥伦比亚：</b>路边的猫都能给你讲三分钟创投计划。💼",
+            "<b>乌萨斯：</b>这里没有感冒，只有伏特加纯度不够。🥃"
         ];
+        const LOCS = ["阿戈尔 🌊", "哥伦比亚 🇺🇸", "叙拉古 🐺", "炎国 🐉", "龙门 🏮", "维多利亚 🦁", "拉特兰 😇"];
 
+        // --- 功能：发送留言到 message 表 ---
+        document.getElementById('btn-send').onclick = async () => {
+            const content = document.getElementById('in-content').value;
+            const author = document.getElementById('in-author').value || "匿名极客";
+            if(!content) return;
+
+            const { error } = await sbClient.from('messages').insert([{ content, author }]);
+            if(!error) {
+                document.getElementById('in-content').value = "";
+                fetchMessages();
+            }
+        };
+
+        // --- 功能：点击记录痛感 ---
         document.getElementById('btn-main').onclick = async () => {
             if (navigator.vibrate) navigator.vibrate(50);
-            document.getElementById('onion-msg').innerText = `“${ONION_QUOTES[Math.floor(Math.random()*ONION_QUOTES.length)]}”`;
-            const loc = `IP属地：${TERRA_LOCS[Math.floor(Math.random() * TERRA_LOCS.length)]}`;
+            const loc = `坐标：${LOCS[Math.floor(Math.random()*LOCS.length)]}`;
             await sbClient.from('records').insert([{ location: loc }]);
             fetchData();
         };
 
+        // --- 功能：获取留言 ---
+        async function fetchMessages() {
+            const { data } = await sbClient.from('messages').select('*').order('created_at', { ascending: false }).limit(20);
+            if(data) {
+                document.getElementById('msg-scroll-box').innerHTML = data.map(m => `
+                    <div class="msg-item">
+                        <div class="msg-meta"><span class="msg-author">@${m.author}</span> · ${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                        <div>${m.content}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // --- 功能：获取统计数据 ---
         async function fetchData() {
             try {
                 const now = new Date();
                 const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
                 
-                // 1. 无限计数
+                // 1. 今日累计
                 const { count } = await sbClient.from('records').select('*', { count: 'exact', head: true }).gte('created_at', today0);
-                const total = count || 0;
-                document.getElementById('count-val').innerText = total;
+                document.getElementById('count-val').innerText = count || 0;
 
-                // 2. 状态逻辑
-                let status = "健康大葱 🍀";
-                if(total > 5) status = "有点蔫的大葱 🍃";
-                if(total > 15) status = "急需抢救的大葱 🚑";
-                if(total > 30) status = "变成葱花的大葱 🌪️";
-                document.getElementById('onion-status').innerText = status;
-
-                // 3. 成就触发
-                if(total === 1) popAchievement("首颗葱汁：痛感的开始");
-                if(total === 10) popAchievement("葱葱铁人：抗压能葱");
-
-                // 4. 数据拉取 (限制1000画图)
-                const { data: records } = await sbClient.from('records').select('*').gte('created_at', new Date(now.getTime() - 7*24*60*60*1000).toISOString()).order('created_at', { ascending: false }).limit(500);
+                // 2. 轨迹明细
+                const { data: records } = await sbClient.from('records').select('*').order('created_at', { ascending: false }).limit(300);
 
                 if (records) {
-                    document.getElementById('history-list').innerHTML = records.slice(0, 20).map(r => `
-                        <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px dashed #eee;">
+                    document.getElementById('hist-list').innerHTML = records.slice(0, 15).map(r => `
+                        <div style="display:flex;justify-content:space-between;padding:3px 0; border-bottom:1px dashed #eee;">
                             <span>🕒 ${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                            <span class="loc-tag">${r.location}</span>
+                            <span style="color:var(--primary)">${r.location}</span>
                         </div>
                     `).join('');
                     renderCharts(records, now);
                 }
             } catch (e) {}
-        }
-
-        function popAchievement(txt) {
-            const el = document.getElementById('achievement');
-            el.innerText = `⭐ ${txt}`; el.style.top = "20px";
-            setTimeout(() => el.style.top = "-100px", 3000);
         }
 
         function renderCharts(records, now) {
@@ -149,8 +167,8 @@
             if (chartH) chartH.destroy();
             chartH = new Chart(document.getElementById('chartHour').getContext('2d'), {
                 type: 'line',
-                data: { labels: Array.from({length: now.getHours()+1}, (_, i) => i + ":00"), datasets: [{ data: hCounts.slice(0, now.getHours()+1), borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.1)', fill: true, tension: 0.4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                data: { labels: Array.from({length: 24}, (_, i) => i + ":00"), datasets: [{ data: hCounts, borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.1)', fill: true, tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
             });
 
             const dayCounts = {};
@@ -172,22 +190,21 @@
         }
 
         function handleJoke() {
-            jokeTimer += 100;
-            document.getElementById('progress-bar').style.width = (jokeTimer / 15000 * 100) + "%";
-            if (jokeTimer >= 15000) {
-                document.getElementById('joke-content').innerHTML = JOKES[Math.floor(Math.random() * JOKES.length)];
-                jokeTimer = 0;
+            jokeProgress += 100;
+            document.getElementById('prog-fill').style.width = (jokeProgress / 15000 * 100) + "%";
+            if (jokeProgress >= 15000) {
+                document.getElementById('joke-text').innerHTML = JOKES[Math.floor(Math.random()*JOKES.length)];
+                jokeProgress = 0;
             }
         }
 
+        // 初始化
         fetchData();
-        document.getElementById('joke-content').innerHTML = JOKES[0];
+        fetchMessages();
+        document.getElementById('joke-text').innerHTML = JOKES[0];
         setInterval(fetchData, 30000);
+        setInterval(fetchMessages, 10000); // 10秒刷一次留言
         setInterval(handleJoke, 100);
-        setInterval(() => {
-            const nextHour = 60 - new Date().getMinutes();
-            document.getElementById('sanity-clock').innerText = `理智回收中: ${nextHour}m`;
-        }, 60000);
     </script>
 </body>
 </html>
