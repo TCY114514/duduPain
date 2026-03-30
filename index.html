@@ -3,58 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
-    <title>肚肚痛监测站 💢 | Scallion v7.3</title>
+    <title>⚡ Scallion OS v9.0 | Terra Inquisitor</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #ff6b6b; --bg: #fff9db; --card-bg: #ffffff; --text: #495057; --accent: #ffd43b; }
+        :root { --p: #ff4757; --bg: #050505; --card: #121212; --text: #ffffff; --cyan: #00ead3; --gold: #f9ca24; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'PingFang SC', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 500px; }
-        .card { background: var(--card-bg); width: 100%; border-radius: 25px; padding: 20px; box-shadow: 0 10px 25px rgba(255, 107, 107, 0.15); margin-bottom: 15px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.8); }
+        body { font-family: 'Consolas', 'PingFang SC', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; overflow-x: hidden; }
         
-        #btn-main {
-            width: 130px; height: 130px; border-radius: 50%; border: none;
-            background: linear-gradient(135deg, #ff8787, #fa5252); color: white; font-size: 1.2rem; font-weight: bold; cursor: pointer; 
-            box-shadow: 0 8px 0 #c92a2a; outline: none; transition: 0.1s;
-        }
-        #btn-main:active { transform: translateY(6px); box-shadow: 0 2px 0 #c92a2a; }
-        #count-val { font-size: 4rem; color: var(--primary); font-weight: 900; display: block; line-height: 1; margin: 10px 0; }
-        
-        .joke-card { border: 2px solid var(--accent); background: #fffdf5; text-align: left; padding: 15px; position: relative; overflow: hidden; }
-        .joke-header { color: #e67e22; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem; border-bottom: 1px dashed var(--accent); padding-bottom: 5px; }
-        .joke-content { font-size: 0.85rem; line-height: 1.6; color: #6f5540; min-height: 85px; }
-        .progress-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: #eee; }
-        #progress-bar { width: 0%; height: 100%; background: var(--accent); transition: width 0.1s linear; }
+        /* 扫描线特效 */
+        body::after { content: " "; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 100; pointer-events: none; background-size: 100% 2px, 3px 100%; }
 
-        .chart-container { height: 180px; width: 100%; margin-top: 10px; }
-        .history { max-height: 150px; overflow-y: auto; text-align: left; padding: 10px; background: #f8f9fa; font-size: 0.75rem; border-radius: 12px; margin-top: 10px; border: 1px inset #eee; }
-        .loc-tag { color: #ff6b6b; font-weight: bold; background: #ffe3e3; padding: 2px 6px; border-radius: 4px; }
+        .container { width: 100%; max-width: 500px; z-index: 10; }
+        .card { background: var(--card); border-radius: 12px; padding: 20px; margin-bottom: 15px; border: 1px solid #333; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        
+        /* 头部状态区 */
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .avatar-box { width: 50px; height: 50px; border: 2px solid var(--cyan); border-radius: 5px; background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .sanity-bar { flex: 1; margin-left: 15px; }
+        .sanity-fill { height: 8px; background: var(--cyan); border-radius: 4px; transition: 0.5s; width: 100%; box-shadow: 0 0 10px var(--cyan); }
+
+        /* 核心按钮区 */
+        #btn-main {
+            width: 140px; height: 140px; border-radius: 50%; border: 4px double var(--p);
+            background: radial-gradient(#ff4757, #ae1f2a); color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer; 
+            box-shadow: 0 0 25px rgba(255, 71, 87, 0.5); transition: 0.1s; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #btn-main:active { transform: scale(0.9); box-shadow: 0 0 40px var(--p); }
+        #count-val { font-size: 5rem; color: var(--p); font-weight: 900; line-height: 1; text-shadow: 0 0 30px rgba(255, 71, 87, 0.7); }
+
+        /* 作战简报（留言板） */
+        .briefing { background: rgba(0,255,211,0.05); border: 1px solid #00f2ff33; padding: 10px; margin: 15px 0; font-size: 0.75rem; color: var(--cyan); min-height: 50px; font-family: monospace; }
+
+        /* 进度条笑话 */
+        .joke-box { border-left: 4px solid var(--gold); padding-left: 10px; min-height: 70px; font-size: 0.8rem; }
+        .prog-wrap { width: 100%; height: 2px; background: #222; margin-top: 10px; }
+        #prog-bar { width: 0%; height: 100%; background: var(--gold); }
+
+        /* 图表区 */
+        .chart-h { height: 150px; }
+        .history { max-height: 130px; overflow-y: auto; font-size: 0.7rem; color: #aaa; scrollbar-width: none; }
+        .hist-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #222; }
+
+        /* 成就系统提示 */
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 8px 20px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; z-index: 200; display: none; }
+
+        .glitch-flash { animation: flash 0.2s 2; }
+        @keyframes flash { 0% { background: rgba(255,71,87,0.3); } 100% { background: transparent; } }
     </style>
 </head>
-<body>
+<body id="main-body">
+
+    <div id="toast"></div>
+
     <div class="container">
         <div class="card">
-            <h2 style="margin:0">🤣 痛了吗？</h2>
-            <div style="padding:15px 0;"><button id="btn-main">肚肚痛了</button></div>
-            <div>今日累计痛感 <span id="count-val">0</span></div>
-            <div class="chart-container"><canvas id="chartHour"></canvas></div>
+            <div class="header-box">
+                <div class="avatar-box" id="mood-icon">🐰</div>
+                <div class="sanity-bar">
+                    <div style="font-size: 0.6rem; margin-bottom: 3px; display: flex; justify-content: space-between;">
+                        <span>SANITY [理智值]</span><span id="san-text">135/135</span>
+                    </div>
+                    <div class="sanity-fill" id="san-bar"></div>
+                </div>
+            </div>
+            <div style="text-align: center; border-top: 1px solid #333; padding-top: 15px;">
+                <button id="btn-main"><span>PRTS</span><small>确认爆发</small></button>
+                <div id="count-val">0</div>
+                <div class="briefing" id="msg-board">等待指令输入...</div>
+            </div>
+            <div class="chart-h"><canvas id="chartHour"></canvas></div>
         </div>
 
         <div class="card">
-            <h3 style="margin:0">📅 最近七日趋势</h3>
-            <div class="chart-container"><canvas id="chartDay"></canvas></div>
-        </div>
-
-        <div class="card joke-card">
-            <div class="joke-header">✨ 泰拉地域偏见大赏</div>
-            <div id="joke-content" class="joke-content">情报解密中...</div>
-            <div class="progress-container"><div id="progress-bar"></div></div>
+            <div style="font-size: 0.6rem; color: var(--gold); margin-bottom: 8px;">[ENCRYPTED CHANNEL] 通讯频道已建立...</div>
+            <div class="joke-box" id="joke-content">正在解密泰拉通讯内容...</div>
+            <div class="prog-wrap"><div id="prog-bar"></div></div>
         </div>
 
         <div class="card">
-            <h3 style="margin:0">📜 历史轨迹 (Top 25)</h3>
-            <div id="history-list" class="history">加载中...</div>
+            <h4 style="margin:0 0 10px 0; font-size: 0.8rem; color: #666;">📊 战略态势：最近七日活跃曲线</h4>
+            <div class="chart-h"><canvas id="chartDay"></canvas></div>
+        </div>
+
+        <div class="card">
+            <h4 style="margin:0 0 10px 0; font-size: 0.8rem; color: #666;">📜 作战日志 (LOGS)</h4>
+            <div class="history" id="history-list">同步中...</div>
         </div>
     </div>
 
@@ -62,22 +96,25 @@
         const SB_URL = "https://nbhaqiynakkdlequbpbh.supabase.co"; 
         const SB_KEY = "sb_publishable_MfHndIpykrX79UrvosT9Nw_JxCYYfbp"; 
         const sbClient = supabase.createClient(SB_URL, SB_KEY);
-        let chartH = null, chartD = null;
-        let jokeTimer = 0;
-        const JOKE_DURATION = 15000;
+        let chartH = null, chartD = null, jokeTimer = 0;
 
-        const TERRA_LOCS = ["阿戈尔", "玻利瓦尔", "多索雷斯", "东国", "哥伦比亚", "卡西米尔", "卡兹戴尔", "拉特兰", "莱塔尼亚", "雷姆必拓", "萨尔贡", "萨米", "维多利亚", "乌萨斯", "谢拉格", "叙拉古", "炎国", "龙门", "伊比利亚", "汐斯塔"];
-        const TERRA_JOKES = [
-            "<b>叙拉古：</b>意面上挤番茄酱？你是想被塞进油桶。",
-            "<b>拉特兰：</b>纠纷全靠炸弹回声，爆炸不够清脆说明没信仰。",
-            "<b>哥伦比亚：</b>路边的猫都能给你讲三分钟投资计划。",
-            "<b>乌萨斯：</b>这里没有感冒，只有伏特加纯度不够。",
-            "<b>炎国：</b>二十岁不泡枸杞会被开除出“岁”相。",
-            "<b>罗德岛：</b>能忍受博士嘴里泡面，说明你已经是合格干员了。"
+        const TERRA_LOCS = ["阿戈尔", "多索雷斯", "特里蒙", "卡瓦莱利亚基", "沃伦姆德", "伦蒂尼姆", "圣骏堡", "龙门", "汐斯塔", "伊比利亚"];
+        const WAR_LOGS = ["警告：源石环境检测异常！", "系统提示：患者痛感阈值上浮。", "PRTS：正在同步医疗部数据...", "作战报告：大葱已压制第N波痛感。", "提示：建议摄入温水进行物理降温。"];
+        const JOKES = [
+            "<b>叙拉古：</b>往意面上挤番茄酱？你是想被塞进油桶。",
+            "<b>拉特兰：</b>拉特兰人解决纠纷靠比谁家炸弹声音脆。",
+            "<b>哥伦比亚：</b>路边的猫都能给你讲三分钟创投计划。",
+            "<b>乌萨斯：</b>这里没有感冒，只有伏特加纯度不够。"
         ];
 
         document.getElementById('btn-main').onclick = async () => {
-            const loc = `IP属地：${TERRA_LOCS[Math.floor(Math.random() * TERRA_LOCS.length)]}`;
+            if (navigator.vibrate) navigator.vibrate(80);
+            document.body.classList.add('glitch-flash');
+            setTimeout(() => document.body.classList.remove('glitch-flash'), 200);
+
+            const loc = `LOC_${TERRA_LOCS[Math.floor(Math.random() * TERRA_LOCS.length)]}`;
+            document.getElementById('msg-board').innerText = `> ${WAR_LOGS[Math.floor(Math.random() * WAR_LOGS.logs)] || WAR_LOGS[0]}`;
+            
             await sbClient.from('records').insert([{ location: loc }]);
             fetchData();
         };
@@ -86,48 +123,63 @@
             try {
                 const now = new Date();
                 const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-                const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+                
+                // 1. 无限计数
+                const { count } = await sbClient.from('records').select('*', { count: 'exact', head: true }).gte('created_at', today0);
+                const total = count || 0;
+                document.getElementById('count-val').innerText = total;
 
-                // --- 1. 获取今日总计 (无限上限) ---
-                const { count: totalToday } = await sbClient
-                    .from('records').select('*', { count: 'exact', head: true }).gte('created_at', today0);
-                document.getElementById('count-val').innerText = totalToday || 0;
+                // 2. 状态关联
+                updateStatus(total);
 
-                // --- 2. 获取用于曲线的数据 (单次请求限制1000) ---
-                // 我们优先拉取今天的数据，保证今天的小时图最准
-                const { data: records } = await sbClient
-                    .from('records').select('*').gte('created_at', sevenDaysAgo).order('created_at', { ascending: false }).limit(1000);
+                // 3. 数据拉取
+                const { data: records } = await sbClient.from('records').select('*').gte('created_at', new Date(now.getTime() - 7*24*60*60*1000).toISOString()).order('created_at', { ascending: false }).limit(500);
 
                 if (records) {
-                    document.getElementById('history-list').innerHTML = records.slice(0, 25).map(r => `
-                        <div class="history-item">
-                            <span>🕒 ${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                            <span class="loc-tag">${r.location}</span>
-                        </div>
+                    document.getElementById('history-list').innerHTML = records.slice(0, 20).map(r => `
+                        <div class="hist-item"><span>[${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}]</span><span style="color:var(--cyan)">${r.location}</span></div>
                     `).join('');
                     renderCharts(records, now);
                 }
-            } catch (e) { console.error("Data error:", e); }
+            } catch (e) {}
+        }
+
+        function updateStatus(total) {
+            // 理智值逻辑
+            const maxSan = 135;
+            const currentSan = Math.max(0, maxSan - total);
+            document.getElementById('san-text').innerText = `${currentSan}/${maxSan}`;
+            document.getElementById('san-bar').style.width = (currentSan / maxSan * 100) + "%";
+
+            // 头像心情切换
+            const icon = document.getElementById('mood-icon');
+            if(total < 5) icon.innerText = "🐰";
+            else if(total < 15) icon.innerText = "🦌";
+            else if(total < 30) icon.innerText = "🐱";
+            else icon.innerText = "👹";
+
+            // 成就触发
+            if(total === 1) triggerToast("成就：第一滴血");
+            if(total === 20) triggerToast("称号：硬核感染者");
+        }
+
+        function triggerToast(txt) {
+            const t = document.getElementById('toast');
+            t.innerText = `🏆 ${txt}`; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
         }
 
         function renderCharts(records, now) {
-            // 小时分布
-            const hourCounts = Array(24).fill(0);
+            const hCounts = Array(24).fill(0);
             const todayStr = now.toLocaleDateString();
-            records.filter(r => new Date(r.created_at).toLocaleDateString() === todayStr)
-                   .forEach(r => hourCounts[new Date(r.created_at).getHours()]++);
-
+            records.filter(r => new Date(r.created_at).toLocaleDateString() === todayStr).forEach(r => hCounts[new Date(r.created_at).getHours()]++);
             if (chartH) chartH.destroy();
             chartH = new Chart(document.getElementById('chartHour').getContext('2d'), {
                 type: 'line',
-                data: { 
-                    labels: Array.from({length: now.getHours() + 1}, (_, i) => i + ":00"), 
-                    datasets: [{ data: hourCounts.slice(0, now.getHours() + 1), borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.1)', fill: true, tension: 0.4 }] 
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+                data: { labels: Array.from({length: 24}, (_, i) => i + ":00"), datasets: [{ data: hCounts, borderColor: '#ff4757', backgroundColor: 'rgba(255,71,87,0.1)', fill: true, tension: 0.4, pointRadius: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } } }
             });
 
-            // 七日分布
             const dayCounts = {};
             for(let i=6; i>=0; i--) {
                 const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
@@ -138,30 +190,27 @@
                 const label = (d.getMonth()+1)+"/"+d.getDate();
                 if(dayCounts.hasOwnProperty(label)) dayCounts[label]++;
             });
-
             if (chartD) chartD.destroy();
             chartD = new Chart(document.getElementById('chartDay').getContext('2d'), {
                 type: 'line',
-                data: { labels: Object.keys(dayCounts), datasets: [{ data: Object.values(dayCounts), borderColor: '#4dabf7', backgroundColor: 'rgba(77, 171, 247, 0.1)', fill: true, tension: 0.3 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                data: { labels: Object.keys(dayCounts), datasets: [{ data: Object.values(dayCounts), borderColor: '#00ead3', backgroundColor: 'rgba(0,234,211,0.1)', fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#222' } } } }
             });
         }
 
-        function updateJoke() {
-            document.getElementById('joke-content').innerHTML = TERRA_JOKES[Math.floor(Math.random() * TERRA_JOKES.length)];
-            jokeTimer = 0;
-        }
-
-        function handleProgressBar() {
+        function handleJoke() {
             jokeTimer += 100;
-            const percentage = (jokeTimer / JOKE_DURATION) * 100;
-            document.getElementById('progress-bar').style.width = Math.min(percentage, 100) + "%";
-            if (jokeTimer >= JOKE_DURATION) updateJoke();
+            document.getElementById('prog-bar').style.width = (jokeTimer / 15000 * 100) + "%";
+            if (jokeTimer >= 15000) {
+                document.getElementById('joke-content').innerHTML = JOKES[Math.floor(Math.random() * JOKES.length)];
+                jokeTimer = 0;
+            }
         }
 
-        fetchData(); updateJoke();
+        fetchData();
+        document.getElementById('joke-content').innerHTML = JOKES[0];
         setInterval(fetchData, 30000);
-        setInterval(handleProgressBar, 100);
+        setInterval(handleJoke, 100);
     </script>
 </body>
 </html>
