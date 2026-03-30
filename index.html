@@ -3,49 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
-    <title>肚肚痛监测站 💢 | Scallion v6.1 Final</title>
+    <title>肚肚痛监测站 💢 | Scallion v7.0 Extreme</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #ff6b6b; --bg: #fff9db; --card-bg: #ffffff; --text: #495057; --accent: #ffd43b; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'PingFang SC', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 500px; }
         .card { background: var(--card-bg); width: 100%; border-radius: 25px; padding: 20px; box-shadow: 0 10px 25px rgba(255, 107, 107, 0.15); margin-bottom: 15px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.8); }
-        .joke-card { border: 2px solid var(--accent); background: #fffdf5; text-align: left; }
-        .joke-header { color: #e67e22; font-weight: bold; margin-bottom: 10px; border-bottom: 1px dashed var(--accent); padding-bottom: 5px; }
-        .joke-content { font-size: 0.85rem; line-height: 1.6; color: #6f5540; min-height: 80px; }
+        .joke-card { border: 2px solid var(--accent); background: #fffdf5; text-align: left; position: relative; }
+        .joke-header { color: #e67e22; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem; border-bottom: 1px dashed var(--accent); padding-bottom: 5px; }
+        .joke-content { font-size: 0.85rem; line-height: 1.6; color: #6f5540; min-height: 90px; transition: opacity 0.5s; }
         #btn-main {
             width: 130px; height: 130px; border-radius: 50%; border: none;
-            background: linear-gradient(135deg, #ff8787, #fa5252); color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer; 
-            box-shadow: 0 8px 0 #c92a2a; outline: none;
+            background: linear-gradient(135deg, #ff8787, #fa5252); color: white; font-size: 1.2rem; font-weight: bold; cursor: pointer; 
+            box-shadow: 0 8px 0 #c92a2a, 0 12px 20px rgba(255, 107, 107, 0.3); outline: none; transition: 0.1s;
         }
-        #btn-main:active { transform: translateY(5px); box-shadow: 0 2px 0 #c92a2a; }
-        #count-val { font-size: 3.5rem; color: var(--primary); font-weight: 900; display: block; margin: 5px 0; }
+        #btn-main:active { transform: translateY(6px); box-shadow: 0 2px 0 #c92a2a; }
+        #count-val { font-size: 4rem; color: var(--primary); font-weight: 900; display: block; line-height: 1; margin: 10px 0; }
         .chart-container { height: 180px; width: 100%; margin-top: 10px; }
-        .history { max-height: 150px; overflow-y: auto; text-align: left; padding: 10px; background: #f8f9fa; font-size: 0.75rem; border-radius: 12px; margin-top: 10px; }
-        .history-item { padding: 6px 0; border-bottom: 1px dashed #ddd; display: flex; justify-content: space-between; }
-        .loc-tag { color: #ff6b6b; font-weight: bold; background: #ffe3e3; padding: 1px 5px; border-radius: 4px; }
+        .history { max-height: 180px; overflow-y: auto; text-align: left; padding: 10px; background: #f8f9fa; font-size: 0.75rem; border-radius: 12px; margin-top: 10px; border: 1px inset #eee; }
+        .history-item { padding: 6px 0; border-bottom: 1px dashed #ddd; display: flex; justify-content: space-between; align-items: center; }
+        .loc-tag { color: #ff6b6b; font-weight: bold; background: #ffe3e3; padding: 2px 6px; border-radius: 4px; }
     </style>
 </head>
 <body>
+
     <div class="container">
         <div class="card">
-            <h1>🤣 痛了吗？</h1>
-            <div style="padding:15px 0;"><button id="btn-main">肚肚痛了！</button></div>
+            <h2 style="margin-top:0">🤣 痛了吗？</h2>
+            <div style="padding:15px 0;"><button id="btn-main"><span>💥</span> 肚肚痛了</button></div>
             <div>今日累计痛感 <span id="count-val">0</span></div>
             <div class="chart-container"><canvas id="chartHour"></canvas></div>
         </div>
+
         <div class="card">
-            <h3>📅 最近七日趋势</h3>
+            <h3 style="margin:0">📅 最近七日趋势</h3>
             <div class="chart-container"><canvas id="chartDay"></canvas></div>
         </div>
+
         <div class="card joke-card">
             <div class="joke-header">✨ 泰拉地域偏见大赏</div>
             <div id="joke-content" class="joke-content">正在载入情报...</div>
         </div>
+
         <div class="card">
-            <h3>📜 最近 30 条历史</h3>
+            <h3 style="margin:0">📜 历史轨迹 (最新25条)</h3>
             <div id="history-list" class="history">加载中...</div>
         </div>
     </div>
@@ -56,81 +60,124 @@
         const sbClient = supabase.createClient(SB_URL, SB_KEY);
         let chartH = null, chartD = null;
 
-        const TERRA_LOCS = ["阿戈尔", "玻利瓦尔", "多索雷斯", "哥伦比亚", "卡西米尔", "卡兹戴尔", "拉特兰", "雷姆必拓", "萨米", "维多利亚", "乌萨斯", "谢拉格", "叙拉古", "炎国", "龙门", "伊比利亚"];
+        const TERRA_LOCS = ["阿戈尔", "玻利瓦尔", "多索雷斯", "东国", "二户城", "姬户城", "新安芸市", "杜林", "际崖城", "天际城", "哥伦比亚", "麦克斯特区", "特里蒙", "提卡伦多", "纽莱堡市", "铸铁城", "加斯帕荒原", "卡西米尔", "卡瓦莱利亚基", "茨沃涅克", "黄金平原", "滴水村", "卡兹戴尔", "卡兹戴尔城", "贝罗尼村", "拉特兰", "司提望区", "安布罗修区", "法柏尔区", "莱塔尼亚", "沃伦姆德", "维谢海姆", "冬灵山脉", "雷姆必拓", "钢铁萝卜城", "铁腕城", "米诺斯", "科林尼亚", "雅赛努斯", "拉刻代蒙", "阿克罗蒂村", "萨尔贡", "阿卡胡拉", "长泉镇", "费坤城", "瓦伊凡地区", "凯尔图恩谷地", "萨米", "察帕特", "冬牙群山", "原初之地", "维多利亚", "伦蒂尼姆", "多伦郡", "小丘郡", "红脊镇", "石高原野", "乌萨斯", "圣骏堡", "切尔诺伯格", "涅瓦湖", "中心矿区", "谢拉格", "图里卡姆", "喀兰峰", "少女峰", "马特洪峰", "叙拉古", "七丘城", "新沃尔西尼", "帕勒莫", "炎国", "龙门", "尚蜀", "玉门", "勾吴城", "姜齐城", "天岳", "雷池", "伊比利亚", "盐风城", "潮石镇", "格兰法洛", "颂圣棱堡", "汐斯塔", "因非冰原", "焚风热土", "常暗裂谷", "苍白海", "阿加门", "骏鹰王国", "高卢", "檀"];
+
         const TERRA_JOKES = [
-            "<b>叙拉古：</b>意面上挤番茄酱？你是想被塞进油桶。",
-            "<b>拉特兰：</b>纠纷全靠炸弹回声，爆炸不够清脆说明没信仰。",
-            "<b>哥伦比亚：</b>路边的猫都能给你讲三分钟创投计划。",
-            "<b>乌萨斯：</b>没有感冒，只有伏特加纯度不够。"
+            "<b>叙拉古：</b>永远不要在叙拉古人面前往意面上挤番茄酱，除非你想尝试一下被塞进油桶里沉入荒野地底的滋味。",
+            "<b>拉特兰：</b>拉特兰人解决邻里纠纷的方式非常简单——比谁家炸弹的回声更好听。如果爆炸声不够清脆，说明你这人缺乏信仰。",
+            "<b>哥伦比亚：</b>在这里，流浪猫都能给你讲三分钟的“源石风险投资”计划。如果你不听，它会试图起诉你侵犯了它的言论自由。",
+            "<b>阿戈尔：</b>阿戈尔人看电影不看剧情，只看屏幕像素。如果水波纹不够圆润，他们会集体退场并投诉影院不够“深海”。",
+            "<b>炎国：</b>炎国人聚在一起不一定是在练武，也有可能是在比谁更养生。如果你二十岁还没开始用保温杯泡枸杞，你会被开除出“岁”相。",
+            "<b>乌萨斯：</b>乌萨斯人的字典里没有“感冒”这个词，只有“伏特加纯度不够”和“今天的风儿还不够喧嚣”。",
+            "<b>卡西米尔：</b>卡西米尔的骑士不一定骑马，但一定得会摆POSE。如果你的闪光灯亮度不足以闪瞎路人的眼睛，你都不好意思说自己是竞技骑士。",
+            "<b>谢拉格：</b>谢拉格人觉得所谓的“高科技”，就是指那种能在雪堆里挖出信号的黑色小方块。",
+            "<b>维多利亚：</b>维多利亚贵族喝下午茶时，就算天上下的是源石结晶，只要管家还没宣布喝茶结束，他们就能优雅地坐在原地被砸成刺猬。",
+            "<b>萨米：</b>萨米人从不迷路，他们只是在思考如何与树木进行一场长达三天的灵魂对话。",
+            "<b>雷姆必拓：</b>如果你在雷姆必拓丢了一把扳手，别去找，直接去最近的黑市，那把扳手可能已经被改装成了能自动挖矿的机器人。",
+            "<b>伊比利亚：</b>伊比利亚人看人的眼神总是带着一种“你看起来很像深海教会卧底”的怀疑，哪怕你只是个路过卖苹果的。",
+            "<b>龙门：</b>龙门人衡量友谊的标准很简单——如果你能帮我在贫民窟抢到一个限量版的叉烧包，你就是我的生死之交。",
+            "<b>卡兹戴尔：</b>萨卡兹人出门从不问路，他们只问：“这块地儿现在归谁管？我能拆吗？”",
+            "<b>罗德岛：</b>这里的人来自五湖四海，但共同特质是：能忍受博士在嘴里泡面，还能忍受博士在指挥时突然掉线。",
+            "<b>卫戍协议：</b>当你在玩卫戍协议时，最恐怖的不是Boss，而是那个在你肚子痛时突然跳出来的网络连接中断图标。"
         ];
 
         document.getElementById('btn-main').onclick = async () => {
+            if (navigator.vibrate) navigator.vibrate(50);
             const loc = `IP属地：${TERRA_LOCS[Math.floor(Math.random() * TERRA_LOCS.length)]}`;
-            const { error } = await sbClient.from('records').insert([{ location: loc }]);
-            if(error) console.error("插入失败:", error);
+            await sbClient.from('records').insert([{ location: loc }]);
             fetchData();
         };
 
         async function fetchData() {
             try {
-                // 1. 获取统计
-                const { data: count, error: e1 } = await sbClient.rpc('get_today_count_v2');
-                const { data: hStats, error: e2 } = await sbClient.rpc('get_hourly_stats_v2');
-                const { data: dStats, error: e3 } = await sbClient.rpc('get_daily_stats_v2');
-                
-                if(e1 || e2 || e3) console.error("RPC错误:", e1 || e2 || e3);
+                const now = new Date();
+                const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-                // 2. 获取列表
-                const { data: recentData } = await sbClient.from('records').select('*').order('created_at', { ascending: false }).limit(30);
+                // 获取最近7天数据（上限1000条，对前端计算性能友好）
+                const { data: records, error } = await sbClient
+                    .from('records')
+                    .select('*')
+                    .gte('created_at', sevenDaysAgo)
+                    .order('created_at', { ascending: false });
 
-                document.getElementById('count-val').innerText = count ?? 0;
-                if (recentData) {
-                    document.getElementById('history-list').innerHTML = recentData.map(r => `
-                        <div class="history-item">
-                            <span>🕒 ${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                            <span class="loc-tag">${r.location}</span>
-                        </div>
-                    `).join('');
-                }
-                if (hStats) renderHourChart(hStats);
-                if (dStats) renderDayChart(dStats);
-            } catch (err) { console.error("执行出错:", err); }
+                if (error) throw error;
+
+                // 1. 计算今日累计
+                const todayStr = now.toLocaleDateString();
+                const todayRecords = records.filter(r => new Date(r.created_at).toLocaleDateString() === todayStr);
+                document.getElementById('count-val').innerText = todayRecords.length;
+
+                // 2. 更新列表
+                document.getElementById('history-list').innerHTML = records.slice(0, 25).map(r => `
+                    <div class="history-item">
+                        <span>🕒 ${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                        <span class="loc-tag">${r.location}</span>
+                    </div>
+                `).join('');
+
+                // 3. 渲染曲线
+                renderHourChart(todayRecords, now);
+                renderDayChart(records, now);
+
+            } catch (e) { console.error("加载失败:", e); }
         }
 
-        function renderHourChart(stats) {
-            const ctx = document.getElementById('chartHour').getContext('2d');
-            const labels = Array.from({length: 24}, (_, i) => i + ":00");
-            const data = labels.map((_, i) => {
-                const s = stats.find(item => item.hour_val === i);
-                return s ? s.count_val : 0;
-            });
+        function renderHourChart(todayData, now) {
+            const hourCounts = Array(24).fill(0);
+            todayData.forEach(r => hourCounts[new Date(r.created_at).getHours()]++);
+            
+            const currentH = now.getHours();
+            const labels = Array.from({length: currentH + 1}, (_, i) => i + ":00");
+            const data = hourCounts.slice(0, currentH + 1);
+
             if (chartH) chartH.destroy();
-            chartH = new Chart(ctx, {
+            chartH = new Chart(document.getElementById('chartHour').getContext('2d'), {
                 type: 'line',
-                data: { labels, datasets: [{ data, borderColor: '#ff6b6b', fill: true, tension: 0.4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                data: { labels, datasets: [{ data, borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.1)', fill: true, tension: 0.4 }] },
+                options: { 
+                    responsive: true, maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } 
+                }
             });
         }
 
-        function renderDayChart(stats) {
-            const ctx = document.getElementById('chartDay').getContext('2d');
+        function renderDayChart(allData, now) {
+            const dayCounts = {};
+            for(let i=6; i>=0; i--) {
+                const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+                const label = (d.getMonth() + 1) + "/" + d.getDate();
+                dayCounts[label] = 0;
+            }
+            allData.forEach(r => {
+                const d = new Date(r.created_at);
+                const label = (d.getMonth() + 1) + "/" + d.getDate();
+                if(dayCounts.hasOwnProperty(label)) dayCounts[label]++;
+            });
+
             if (chartD) chartD.destroy();
-            chartD = new Chart(ctx, {
+            chartD = new Chart(document.getElementById('chartDay').getContext('2d'), {
                 type: 'line',
-                data: {
-                    labels: stats.map(s => s.date_label),
-                    datasets: [{ data: stats.map(s => s.count_val), borderColor: '#4dabf7', fill: true, tension: 0.3 }]
+                data: { 
+                    labels: Object.keys(dayCounts), 
+                    datasets: [{ data: Object.values(dayCounts), borderColor: '#4dabf7', backgroundColor: 'rgba(77, 171, 247, 0.1)', fill: true, tension: 0.3 }] 
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
             });
         }
 
         function rotateJoke() {
-            document.getElementById('joke-content').innerHTML = TERRA_JOKES[Math.floor(Math.random() * TERRA_JOKES.length)];
+            const el = document.getElementById('joke-content');
+            el.style.opacity = 0;
+            setTimeout(() => {
+                el.innerHTML = TERRA_JOKES[Math.floor(Math.random() * TERRA_JOKES.length)];
+                el.style.opacity = 1;
+            }, 500);
         }
 
         fetchData(); rotateJoke();
-        setInterval(fetchData, 30000); setInterval(rotateJoke, 15000);
+        setInterval(fetchData, 30000); 
+        setInterval(rotateJoke, 15000);
     </script>
 </body>
 </html>
