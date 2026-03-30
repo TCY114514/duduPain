@@ -517,6 +517,69 @@
 
 
 
+
+/* 风险等级动态配色 */
+.risk-level { font-weight: 700; padding: 2px 8px; border-radius: 3px; font-size: 0.7rem; }
+.level-low { background: rgba(76, 175, 125, 0.2); color: #4caf7d; border: 1px solid #4caf7d; }
+.level-mid { background: rgba(232, 169, 69, 0.2); color: #e8a945; border: 1px solid #e8a945; }
+.level-high { background: rgba(255, 60, 60, 0.2); color: #ff3c3c; border: 1px solid #ff3c3c; animation: blinker 1s linear infinite; }
+@keyframes blinker { 50% { opacity: 0.5; } }
+
+
+
+/* 移动端底部战术条 */
+@media (max-width: 1400px) {
+    .mobile-status-bar {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        height: 60px;
+        background: rgba(13, 17, 23, 0.95);
+        border-top: 1px solid var(--accent);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+        padding: 0 10px;
+    }
+    .m-item { text-align: center; font-family: 'Rajdhani'; }
+    .m-label { font-size: 0.5rem; color: var(--text-lo); display: block; text-transform: uppercase; }
+    .m-val { font-size: 0.8rem; color: var(--accent); font-weight: 700; }
+    
+    /* 调整主容器边距，防止被底部条遮挡 */
+    .wrapper { padding-bottom: 80px !important; }
+}
+
+/* 隐藏 PC 侧边栏的手机备用样式 */
+@media (min-width: 1401px) {
+    .mobile-status-bar { display: none; }
+}
+
+
+
+
+/* 情报档案面板特有样式 */
+    .archive-table {
+        width: 100%; border-collapse: collapse; margin-top: 10px;
+        font-family: 'Rajdhani', monospace; font-size: 0.75rem; color: #8a9bb8;
+    }
+    .archive-table th { 
+        text-align: left; color: var(--accent); border-bottom: 1px solid var(--border); 
+        padding: 8px 4px; text-transform: uppercase; letter-spacing: 1px; 
+    }
+    .archive-table td { padding: 6px 4px; border-bottom: 1px solid rgba(42, 58, 82, 0.3); }
+    .archive-table tr:hover td { background: rgba(255,255,255,0.02); color: #fff; }
+    .time-stamp { color: #5b9bd5; } /* 医疗蓝时间戳 */
+    .loc-tag { color: #e0e0e0; font-weight: 500; }
+    
+    /* 滚动条美化 */
+    .archive-scroll::-webkit-scrollbar { width: 4px; }
+    .archive-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+
+
+
+
     </style>
 </head>
 <body>
@@ -1025,6 +1088,205 @@
         });
 })();
 
+
+
+
+(function injectRiskAssessment() {
+    // 1. 在左侧塔台插入评估面板
+    const leftTower = document.getElementById('tower-left');
+    const riskDiv = document.createElement('div');
+    riskDiv.className = 'tower-section';
+    riskDiv.innerHTML = `
+        <span class="tower-label">Risk Assessment // 风险评估</span>
+        <div id="risk-tag" class="risk-level level-low">LEVEL: Alpha</div>
+        <div id="risk-comment" style="font-size: 0.7rem; color: var(--text-hi); margin-top: 10px; line-height: 1.5; font-family: 'Noto Sans SC';">
+            检测中...
+        </div>
+    `;
+    leftTower.appendChild(riskDiv);
+
+    // 2. 评估逻辑逻辑
+    function updateRisk() {
+        const count = parseInt(document.getElementById('count-val').innerText) || 0;
+        const tag = document.getElementById('risk-tag');
+        const comment = document.getElementById('risk-comment');
+        
+        let level = "", cls = "", text = "";
+
+        if (count == 1433223) {
+            level = "LEVEL: Omega (崩溃)";
+            cls = "level-high";
+            text = "鬼手级别：让大葱痛到这辈子玩卫戍协议抓不到大C 转头发现自家大C队友人手8个精锐";
+        } else if (count <= 50) {
+            level = "LEVEL: Alpha (轻微)";
+            cls = "level-low";
+            text = "» 肠胃菌群尚在可控范围内，建议继续保持观察。";
+        } else if (count <= 200) {
+            level = "LEVEL: Beta (显著)";
+            cls = "level-mid";
+            text = "» 痛感频率上升。医疗部建议：检查是否摄入了不明来源的辛辣物质。";
+        } else if (count <= 500) {
+            level = "LEVEL: Gamma (严重)";
+            cls = "level-high";
+            text = "» 警告：检测到频繁的腹部痉挛信号。请立即停止摄入冰凉饮品，并向凯尔希医生报备。";
+        } else {
+            level = "LEVEL: Omega (崩溃)";
+            cls = "level-high";
+            text = "» 核心逻辑受损！干员，你的肠胃正在哀嚎。强烈建议立刻寻找最近的医疗点，而不是在这里点按钮！";
+        }
+
+        tag.innerText = level;
+        tag.className = "risk-level " + cls;
+        comment.innerText = text;
+    }
+
+    // 每5秒轮询一次页面上的数字
+    setInterval(updateRisk, 5000);
+    // 同时也挂载到按钮点击上，点完秒更新
+    const btn = document.getElementById('btn-main');
+    if(btn) {
+        const preClick = btn.onclick;
+        btn.onclick = async function(e) {
+            if(preClick) await preClick.call(this, e);
+            setTimeout(updateRisk, 1000); // 延迟1秒等数据刷新
+        };
+    }
+})();
+
+
+
+(function injectMobileAdaptor() {
+    // 1. 创建底部状态栏 HTML
+    const mBar = document.createElement('div');
+    mBar.className = 'mobile-status-bar';
+    mBar.innerHTML = `
+        <div class="m-item">
+            <span class="m-label">VITAL</span>
+            <span class="m-val" id="m-pulse">--</span>
+        </div>
+        <div class="m-item">
+            <span class="m-label">ONLINE</span>
+            <span class="m-val" id="m-online" style="color:#00ff7f">1</span>
+        </div>
+        <div class="m-item">
+            <span class="m-label">RISK LEVEL</span>
+            <span class="m-val" id="m-risk">ALPHA</span>
+        </div>
+        <div class="m-item">
+            <span class="m-label">SYNC</span>
+            <span class="m-val" style="color:var(--accent2)">OK</span>
+        </div>
+    `;
+    document.body.appendChild(mBar);
+
+    // 2. 数据同步循环
+    function syncMobileData() {
+        // 同步心率
+        const p = document.getElementById('v-pulse');
+        if(p) document.getElementById('m-pulse').innerText = p.innerText.split(' ')[0];
+        
+        // 同步在线人数
+        const o = document.getElementById('online-count');
+        if(o) document.getElementById('m-online').innerText = o.innerText;
+        
+        // 同步风险等级
+        const r = document.getElementById('risk-tag');
+        if(r) {
+            const levelText = r.innerText.split(':')[1]?.split('(')[0].trim() || "ALPHA";
+            const mRisk = document.getElementById('m-risk');
+            mRisk.innerText = levelText;
+            // 颜色同步
+            mRisk.style.color = window.getComputedStyle(r).color;
+        }
+    }
+
+    // 每秒同步一次，确保移动端数据也是活的
+    setInterval(syncMobileData, 1000);
+})();
+
+
+
+(function injectArchiveLog() {
+    // 1. 在主容器 (.wrapper) 中注入面板
+    const wrapper = document.querySelector('.wrapper');
+    if (!wrapper) return;
+
+    const archivePanel = document.createElement('div');
+    archivePanel.className = 'panel';
+    archivePanel.style.marginTop = '25px';
+    archivePanel.innerHTML = `
+        <div class="corner-tl"></div><div class="corner-br"></div>
+        <div class="panel-header">
+            <div class="panel-header-icon" style="background:#5b9bd5"></div>
+            <span class="panel-header-title">情报档案流水 // INTELLIGENCE ARCHIVE</span>
+            <span class="panel-header-right">RECENT 50 RECORDS</span>
+        </div>
+        <div class="panel-body" style="padding: 10px 20px;">
+            <div class="archive-scroll" style="height: 300px; overflow-y: auto;">
+                <table class="archive-table">
+                    <thead>
+                        <tr>
+                            <th style="width:15%">SEQ</th>
+                            <th style="width:35%">TIMESTAMP</th>
+                            <th style="width:50%">ORI-IP LOCATION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archive-body">
+                        <tr><td colspan="3" style="text-align:center; padding:40px; color:var(--text-lo);">正在接入 PRTS 归档...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    wrapper.appendChild(archivePanel);
+
+    // 2. 渲染表格数据的函数
+    function renderArchive(records) {
+        const tbody = document.getElementById('archive-body');
+        if (!tbody || !records) return;
+
+        if (records.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px;">无归档数据</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = records.slice(0, 50).map((r, i) => {
+            const d = new Date(r.created_at);
+            const timeStr = d.getHours().toString().padStart(2,'0') + ":" + 
+                            d.getMinutes().toString().padStart(2,'0') + ":" + 
+                            d.getSeconds().toString().padStart(2,'0');
+            return `
+                <tr>
+                    <td>#${String(i + 1).padStart(2, '0')}</td>
+                    <td class="time-stamp">${timeStr}</td>
+                    <td class="loc-tag">${r.location || '未知区域'}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // 3. 挂载到原有的 fetchData 逻辑
+    const originalFetch = window.fetchData;
+    if (typeof originalFetch === 'function') {
+        window.fetchData = async function() {
+            // 执行原有的获取逻辑（更新图表和总数）
+            await originalFetch();
+            
+            // 额外获取最近 50 条详细数据用于本面板
+            const { data, error } = await sbClient
+                .from('records')
+                .select('created_at, location')
+                .order('created_at', { ascending: false })
+                .limit(50);
+            
+            if (!error) renderArchive(data);
+        };
+    }
+
+    // 初始化调用一次
+    if (typeof sbClient !== 'undefined') window.fetchData();
+
+})();
 
 
 
