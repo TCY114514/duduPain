@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
-    <title>肚肚痛监测站 💢 | Scallion Protocol v4.5 Full-Spec</title>
+    <title>肚肚痛监测站 💢 | Scallion Protocol v4.5 Final</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -14,7 +14,7 @@
         .main-col { flex: 1.2; min-width: 320px; max-width: 550px; }
         .side-col { flex: 0.8; min-width: 320px; max-width: 400px; }
         .card { background: var(--card-bg); width: 100%; border-radius: 25px; padding: 25px; box-shadow: 0 10px 30px rgba(255, 107, 107, 0.15); margin-bottom: 15px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.8); }
-        .joke-card { border: 2px solid var(--accent); background: #fffdf5; position: relative; overflow: hidden; min-height: 180px; }
+        .joke-card { border: 2px solid var(--accent); background: #fffdf5; position: relative; min-height: 180px; }
         .joke-header { color: #e67e22; font-weight: bold; margin-bottom: 12px; font-size: 1.1rem; border-bottom: 1px dashed var(--accent); padding-bottom: 8px; }
         .joke-content { text-align: left; font-size: 0.9rem; line-height: 1.7; color: #6f5540; transition: opacity 0.5s; padding: 5px; }
         .btn-wrapper { padding: 20px 0; }
@@ -24,7 +24,7 @@
             box-shadow: 0 8px 0 #c92a2a, 0 12px 25px rgba(255,107,107,0.4); transition: 0.1s; outline: none; animation: pulse 2s infinite;
         }
         #btn-main:active { transform: translateY(6px); box-shadow: 0 2px 0 #c92a2a; animation: none; }
-        #count-val { font-size: 4rem; color: var(--primary); font-weight: 900; display: block; line-height: 1; margin: 15px 0; text-shadow: 2px 2px 0 rgba(0,0,0,0.05); }
+        #count-val { font-size: 4rem; color: var(--primary); font-weight: 900; display: block; line-height: 1; margin: 15px 0; }
         .report { background: #fff5f5; padding: 15px; border-radius: 15px; text-align: left; border-left: 6px solid var(--primary); font-size: 0.85rem; line-height: 1.6; }
         .history { max-height: 220px; overflow-y: auto; text-align: left; padding: 10px; border-radius: 12px; background: #f8f9fa; font-size: 0.75rem; border: 1px inset #eee; }
         .history-item { padding: 8px 0; border-bottom: 1px dashed #ddd; display: flex; justify-content: space-between; align-items: center; }
@@ -42,12 +42,10 @@
                 <div class="btn-wrapper"><button id="btn-main"><span>😂</span>肚肚痛了！</button></div>
                 <div>今日累计痛感 <span id="count-val">0</span> <small style="color:#bbb">(北京时间0点刷新)</small></div>
             </div>
-            
             <div class="card">
                 <h3>🕒 今日小时趋势 (UTC+8)</h3>
                 <div class="chart-container"><canvas id="chartHour"></canvas></div>
             </div>
-
             <div class="card">
                 <h3>📅 最近七日趋势</h3>
                 <div class="chart-container"><canvas id="chartDay"></canvas></div>
@@ -59,12 +57,10 @@
                 <div class="joke-header">✨ 泰拉大陆“地域偏见”大赏</div>
                 <div id="joke-content" class="joke-content">正在载入泰拉情报...</div>
             </div>
-
             <div class="card">
                 <h3>📝 痛感日报</h3>
                 <div id="report-text" class="report">接入数据链路...</div>
             </div>
-
             <div class="card">
                 <h3>📜 历史轨迹 (最新50条)</h3>
                 <div id="history-list" class="history">加载中...</div>
@@ -78,27 +74,21 @@
         const sbClient = supabase.createClient(SB_URL, SB_KEY);
         let chartH = null, chartD = null;
 
-        // --- 全量地名库 (返还) ---
         const TERRA_LOCS = ["阿戈尔", "玻利瓦尔", "多索雷斯", "东国", "二户城", "姬户城", "新安芸市", "杜林", "际崖城", "天际城", "哥伦比亚", "麦克斯特区", "特里蒙", "提卡伦多", "纽莱堡市", "铸铁城", "加斯帕荒原", "卡西米尔", "卡瓦莱利亚基", "茨沃涅克", "黄金平原", "滴水村", "卡兹戴尔", "卡兹戴尔城", "贝罗尼村", "拉特兰", "司提望区", "安布罗修区", "法柏尔区", "莱塔尼亚", "沃伦姆德", "维谢海姆", "冬灵山脉", "雷姆必拓", "钢铁萝卜城", "铁腕城", "米诺斯", "科林尼亚", "雅赛努斯", "拉刻代蒙", "阿克罗蒂村", "萨尔贡", "阿卡胡拉", "长泉镇", "费坤城", "瓦伊凡地区", "凯尔图恩谷地", "萨米", "察帕特", "冬牙群山", "原初之地", "维多利亚", "伦蒂尼姆", "多伦郡", "小丘郡", "红脊镇", "石高原野", "乌萨斯", "圣骏堡", "切尔诺伯格", "涅瓦湖", "中心矿区", "谢拉格", "图里卡姆", "喀兰峰", "少女峰", "马特洪峰", "叙拉古", "七丘城", "新沃尔西尼", "帕勒莫", "炎国", "龙门", "尚蜀", "玉门", "勾吴城", "姜齐城", "天岳", "雷池", "伊比利亚", "盐风城", "潮石镇", "格兰法洛", "颂圣棱堡", "汐斯塔", "因非冰原", "焚风热土", "常暗裂谷", "苍白海", "阿加门", "骏鹰王国", "高卢", "檀"];
 
-        // --- 全量笑话库 (返还) ---
         const TERRA_JOKES = [
-            "<b>阿戈尔：</b>阿戈尔人看电影不看剧情，只看屏幕像素够不够精致，如果水波纹不够圆润，他们会集体退场并投诉影院不够“深海”。",
-            "<b>哥伦比亚：</b>在这里，流浪猫都能给你讲三分钟的“源石风险投资”计划。如果你不听，它会试图起诉你侵犯了它的言论自由。",
-            "<b>拉特兰：</b>拉特兰人解决邻里纠纷的方式非常简单——比谁家炸弹的回声更好听。如果爆炸声不够清脆，说明你这人缺乏信仰。",
-            "<b>叙拉古：</b>永远不要在叙拉古人面前往意面上挤番茄酱，除非你想尝试一下被塞进油桶里沉入荒野地底的滋味。",
-            "<b>炎国：</b>炎国人聚在一起不一定是在练武，也有可能是在比谁更养生。如果你二十岁还没开始用保温杯泡枸杞，你会被开除出“岁”相。",
-            "<b>乌萨斯：</b>乌萨斯人的字典里没有“感冒”这个词，只有“伏特加纯度不够”和“今天的风儿还不够喧嚣”。",
-            "<b>卡西米尔：</b>卡西米尔的骑士不一定骑马，但一定得会摆POSE。如果你的闪光灯亮度不足以闪瞎路人的眼睛，你都不好意思说自己是竞技骑士。",
-            "<b>谢拉格：</b>谢拉格人觉得所谓的“高科技”，就是指那种能在雪堆里挖出信号的黑色小方块。",
-            "<b>维多利亚：</b>维多利亚贵族喝下午茶时，就算天上下的是源石结晶，只要管家还没宣布喝茶结束，他们就能优雅地坐在原地被砸成刺猬。",
-            "<b>萨米：</b>萨米人从不迷路，他们只是在思考如何与树木进行一场长达三天的灵魂对话。",
-            "<b>雷姆必拓：</b>如果你在雷姆必拓丢了一把扳手，别去找，直接去最近的黑市，那把扳手可能已经被改装成了能自动挖矿的机器人。",
-            "<b>伊比利亚：</b>伊比利亚人看人的眼神总是带着一种“你看起来很像深海教会卧底”的怀疑，哪怕你只是个路过卖苹果的。",
-            "<b>玻利瓦尔：</b>在这里，如果你早上起床没发现三种不同势力的传单塞在门缝里，那说明你家可能已经因为打仗被夷为平地了。",
-            "<b>龙门：</b>龙门人衡量友谊的标准很简单——如果你能帮我在贫民窟抢到一个限量版的叉烧包，你就是我的生死之交。",
-            "<b>卡兹戴尔：</b>萨卡兹人出门从不问路，他们只问：“这块地儿现在归谁管？我能拆吗？”",
-            "<b>罗德岛：</b>这里的人来自五湖四海，但共同特质是：能忍受博士在嘴里泡面，还能忍受博士在指挥时突然掉线。"
+            "<b>阿戈尔：</b>阿戈尔人看电影不看剧情，只看像素。如果水波纹不够圆润，他们会集体退场。",
+            "<b>哥伦比亚：</b>在这里，流浪猫都能给你讲三分钟的风险投资计划。不听它就起诉你。",
+            "<b>拉特兰：</b>解决邻里纠纷的方式很简单——比谁家炸弹的回声更好听。",
+            "<b>叙拉古：</b>永远不要在意面上挤番茄酱，除非你想被塞进油桶沉入地底。",
+            "<b>炎国：</b>二十岁还没开始保温杯泡枸杞，会被开除出“岁”相。",
+            "<b>乌萨斯：</b>这里没有“感冒”，只有“伏特加纯度不够”。",
+            "<b>卡西米尔：</b>竞技骑士不一定骑马，但一定得会摆POSE和开闪光灯。",
+            "<b>维多利亚：</b>就算天上掉源石，只要管家没说茶歇结束，贵族就能优雅地坐着被砸。",
+            "<b>萨米：</b>萨米人从不迷路，他们只是在和树木进行长达三天的灵魂对话。",
+            "<b>雷姆必拓：</b>如果你丢了一把扳手，去黑市看，它可能已经被改装成了自动挖矿机。",
+            "<b>伊比利亚：</b>这里的人看谁都像卧底，哪怕你只是个路过卖苹果的。",
+            "<b>罗德岛：</b>这里的人能忍受博士在嘴里泡面，还能忍受博士指挥掉线。"
         ];
 
         document.getElementById('btn-main').onclick = async () => {
@@ -111,8 +101,8 @@
         async function fetchData() {
             try {
                 // 1. 获取今日总数 (RPC)
-                const { data: count } = await sbClient.rpc('get_today_count');
-                document.getElementById('count-val').innerText = count || 0;
+                const { data: count, error: cErr } = await sbClient.rpc('get_today_count');
+                if(!cErr) document.getElementById('count-val').innerText = count || 0;
 
                 // 2. 获取小时统计 (RPC)
                 const { data: hStats } = await sbClient.rpc('get_hourly_stats');
@@ -123,10 +113,8 @@
                 // 4. 获取历史轨迹
                 const { data: records } = await sbClient.from('records').select('*').order('created_at', { ascending: false }).limit(50);
 
-                // 更新评价系统 (还原梗)
-                let evalTxt = count > 1433223 ? "🚑 <b style='color:red'>鬼手级别</b>：大葱痛到抓不到大C，自家队友全是白给。" : 
-                             count > 200 ? "💀 <b>天灾级别</b>：肚子里的源石在开派对。" : 
-                             count > 50 ? "🌋 <b>高危提示</b>" : "🌱 <b>生命体征平稳</b>";
+                // 更新评价
+                let evalTxt = count > 1433223 ? "🚑 <b style='color:red'>鬼手级别</b>" : count > 200 ? "💀 <b>天灾</b>" : count > 50 ? "🌋 <b>高危</b>" : "🌱 <b>平稳</b>";
                 document.getElementById('report-text').innerHTML = `<b>今日累计：</b>${count}次<br><b>医疗评价：</b>${evalTxt}`;
 
                 if(records) {
@@ -140,8 +128,7 @@
 
                 if(hStats) renderHourChart(hStats);
                 if(dStats) renderDayChart(dStats);
-
-            } catch (e) { console.error("链路中断:", e); }
+            } catch (e) { console.error(e); }
         }
 
         function renderHourChart(stats) {
