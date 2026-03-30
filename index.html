@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
-    <title>肚肚痛监测站 💢 | Scallion v7.2</title>
+    <title>肚肚痛监测站 💢 | Scallion v7.3</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -13,7 +13,6 @@
         .container { width: 100%; max-width: 500px; }
         .card { background: var(--card-bg); width: 100%; border-radius: 25px; padding: 20px; box-shadow: 0 10px 25px rgba(255, 107, 107, 0.15); margin-bottom: 15px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.8); }
         
-        /* 按钮样式 */
         #btn-main {
             width: 130px; height: 130px; border-radius: 50%; border: none;
             background: linear-gradient(135deg, #ff8787, #fa5252); color: white; font-size: 1.2rem; font-weight: bold; cursor: pointer; 
@@ -22,14 +21,12 @@
         #btn-main:active { transform: translateY(6px); box-shadow: 0 2px 0 #c92a2a; }
         #count-val { font-size: 4rem; color: var(--primary); font-weight: 900; display: block; line-height: 1; margin: 10px 0; }
         
-        /* 笑话卡片与进度条 */
         .joke-card { border: 2px solid var(--accent); background: #fffdf5; text-align: left; padding: 15px; position: relative; overflow: hidden; }
         .joke-header { color: #e67e22; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem; border-bottom: 1px dashed var(--accent); padding-bottom: 5px; }
         .joke-content { font-size: 0.85rem; line-height: 1.6; color: #6f5540; min-height: 85px; }
         .progress-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: #eee; }
         #progress-bar { width: 0%; height: 100%; background: var(--accent); transition: width 0.1s linear; }
 
-        /* 图表与历史记录 */
         .chart-container { height: 180px; width: 100%; margin-top: 10px; }
         .history { max-height: 150px; overflow-y: auto; text-align: left; padding: 10px; background: #f8f9fa; font-size: 0.75rem; border-radius: 12px; margin-top: 10px; border: 1px inset #eee; }
         .loc-tag { color: #ff6b6b; font-weight: bold; background: #ffe3e3; padding: 2px 6px; border-radius: 4px; }
@@ -67,21 +64,16 @@
         const sbClient = supabase.createClient(SB_URL, SB_KEY);
         let chartH = null, chartD = null;
         let jokeTimer = 0;
-        const JOKE_DURATION = 15000; // 15秒切换一次
+        const JOKE_DURATION = 15000;
 
-        const TERRA_LOCS = ["阿戈尔", "玻利瓦尔", "多索雷斯", "东国", "二户城", "哥伦比亚", "特里蒙", "卡西米尔", "卡兹戴尔", "拉特兰", "莱塔尼亚", "雷姆必拓", "萨尔贡", "萨米", "维多利亚", "伦蒂尼姆", "乌萨斯", "谢拉格", "叙拉古", "炎国", "龙门", "伊比利亚", "汐斯塔"];
-
+        const TERRA_LOCS = ["阿戈尔", "玻利瓦尔", "多索雷斯", "东国", "哥伦比亚", "卡西米尔", "卡兹戴尔", "拉特兰", "莱塔尼亚", "雷姆必拓", "萨尔贡", "萨米", "维多利亚", "乌萨斯", "谢拉格", "叙拉古", "炎国", "龙门", "伊比利亚", "汐斯塔"];
         const TERRA_JOKES = [
-            "<b>叙拉古：</b>永远不要在意面上挤番茄酱，否则会被塞进油桶沉入荒野。",
-            "<b>拉特兰：</b>纠纷全靠炸弹回声，爆炸不够清脆说明信仰不足。",
-            "<b>哥伦比亚：</b>路边的猫都能给你讲三分钟创投计划，不听就起诉你。",
+            "<b>叙拉古：</b>意面上挤番茄酱？你是想被塞进油桶。",
+            "<b>拉特兰：</b>纠纷全靠炸弹回声，爆炸不够清脆说明没信仰。",
+            "<b>哥伦比亚：</b>路边的猫都能给你讲三分钟投资计划。",
             "<b>乌萨斯：</b>这里没有感冒，只有伏特加纯度不够。",
-            "<b>炎国：</b>二十岁不泡枸杞会被开除出“岁”相，这里比武先比养生。",
-            "<b>卡西米尔：</b>竞技骑士不一定骑马，但闪光灯一定要能闪瞎路人。",
-            "<b>阿戈尔：</b>看电影只看水波纹像素，不圆润直接集体退场投诉。",
-            "<b>萨米：</b>萨米人从不迷路，他们只是在和树木进行长达三天的对话。",
-            "<b>维多利亚：</b>只要管家没宣布喝茶结束，就算天上下源石也能优雅坐着。",
-            "<b>卫戍协议：</b>最恐怖的不是Boss，而是肚子痛时突然跳出的网络中断。"
+            "<b>炎国：</b>二十岁不泡枸杞会被开除出“岁”相。",
+            "<b>罗德岛：</b>能忍受博士嘴里泡面，说明你已经是合格干员了。"
         ];
 
         document.getElementById('btn-main').onclick = async () => {
@@ -96,12 +88,13 @@
                 const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
                 const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-                // 1. 获取今日总数（突破1000限制逻辑）
+                // --- 1. 获取今日总计 (无限上限) ---
                 const { count: totalToday } = await sbClient
                     .from('records').select('*', { count: 'exact', head: true }).gte('created_at', today0);
                 document.getElementById('count-val').innerText = totalToday || 0;
 
-                // 2. 获取记录（用于图表和列表）
+                // --- 2. 获取用于曲线的数据 (单次请求限制1000) ---
+                // 我们优先拉取今天的数据，保证今天的小时图最准
                 const { data: records } = await sbClient
                     .from('records').select('*').gte('created_at', sevenDaysAgo).order('created_at', { ascending: false }).limit(1000);
 
@@ -118,6 +111,7 @@
         }
 
         function renderCharts(records, now) {
+            // 小时分布
             const hourCounts = Array(24).fill(0);
             const todayStr = now.toLocaleDateString();
             records.filter(r => new Date(r.created_at).toLocaleDateString() === todayStr)
@@ -133,6 +127,7 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
             });
 
+            // 七日分布
             const dayCounts = {};
             for(let i=6; i>=0; i--) {
                 const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
@@ -152,10 +147,8 @@
             });
         }
 
-        // --- 进度条逻辑 ---
         function updateJoke() {
-            const el = document.getElementById('joke-content');
-            el.innerHTML = TERRA_JOKES[Math.floor(Math.random() * TERRA_JOKES.length)];
+            document.getElementById('joke-content').innerHTML = TERRA_JOKES[Math.floor(Math.random() * TERRA_JOKES.length)];
             jokeTimer = 0;
         }
 
@@ -166,10 +159,9 @@
             if (jokeTimer >= JOKE_DURATION) updateJoke();
         }
 
-        fetchData();
-        updateJoke();
-        setInterval(fetchData, 30000); // 30秒同步一次数据
-        setInterval(handleProgressBar, 100); // 0.1秒更新一次进度条
+        fetchData(); updateJoke();
+        setInterval(fetchData, 30000);
+        setInterval(handleProgressBar, 100);
     </script>
 </body>
 </html>
