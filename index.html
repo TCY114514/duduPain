@@ -216,9 +216,10 @@
             try {
                 // 获取所有数据用于每日计算
                 const { data: allRecords, error } = await sbClient
-                    .from('records')
-                    .select('created_at, location')
-                    .order('created_at', { ascending: false });
+    .from('records')
+    .select('created_at, location')
+    .range(0, 9999) // 手动指定获取 0 到 9999 条数据
+    .order('created_at', { ascending: false });
 
                 if (error) throw error;
 
