@@ -2,315 +2,1032 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
-    <title>💥 大葱又痛了吗？！ | Scallion Cyber-Heavy v17.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>💥 大葱又痛了吗？！ | 罗德岛医疗监测系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { 
-            --p: #ff6b6b; --p-glow: rgba(255, 107, 107, 0.4);
-            --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --sub: #666;
-            --border: #333; --neon: #00f2fe; --gold: #ffd43b;
+        :root {
+            --bg-deep:    #0d1117;
+            --bg-panel:   #161c26;
+            --bg-card:    #1a2235;
+            --bg-input:   #111823;
+            --border:     #2a3a52;
+            --border-hi:  #3d5a80;
+            --accent:     #e8a945;
+            --accent-dim: rgba(232, 169, 69, 0.15);
+            --accent2:    #5b9bd5;
+            --accent2-dim:rgba(91, 155, 213, 0.15);
+            --red:        #e05c5c;
+            --red-dim:    rgba(224, 92, 92, 0.15);
+            --green:      #4caf7d;
+            --text-hi:    #d8e4f0;
+            --text-mid:   #8a9bb8;
+            --text-lo:    #445566;
+            --shadow:     0 4px 24px rgba(0,0,0,0.5);
         }
-        
-        /* 核心扫描线特效 */
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Noto Sans SC', 'Rajdhani', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-hi);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── 背景纹理 ── */
         body::before {
-            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 9999; background-size: 100% 4px, 3px 100%; pointer-events: none;
+            content: "";
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.18;
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::after {
+            content: "";
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(91,155,213,0.08) 0%, transparent 65%);
+            pointer-events: none; z-index: 0;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            font-family: 'JetBrains Mono', 'PingFang SC', sans-serif; 
-            background: var(--bg); color: var(--text); margin: 0; padding: 0;
-            display: flex; flex-direction: column; align-items: center; 
+        /* ── TOP NAV ── */
+        .topnav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(13,17,23,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 56px;
+        }
+        .nav-logo {
+            display: flex; align-items: center; gap: 14px;
+        }
+        .nav-logo-icon {
+            width: 32px; height: 32px;
+            border: 2px solid var(--accent);
+            transform: rotate(45deg);
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .nav-logo-icon::before {
+            content: "";
+            position: absolute; inset: 4px;
+            background: var(--accent);
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+        .nav-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem; font-weight: 700; letter-spacing: 4px;
+            color: var(--text-hi); text-transform: uppercase;
+        }
+        .nav-right {
+            display: flex; align-items: center; gap: 20px;
+        }
+        .nav-tag {
+            font-size: 0.65rem; letter-spacing: 3px; color: var(--text-lo);
+            font-family: 'Rajdhani', monospace;
+        }
+        .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        /* ── 主容器 ── */
+        .wrapper {
+            position: relative; z-index: 1;
+            max-width: 1140px; margin: 0 auto;
+            padding: 36px 20px 80px;
+            display: flex; flex-direction: column; gap: 28px;
         }
 
-        /* 繁琐的页眉 */
-        .header-banner {
-            width: 100%; padding: 40px; text-align: center; border-bottom: 2px double var(--border);
-            background: linear-gradient(to bottom, #1a1a1a, #121212); position: relative;
+        /* ── 页眉 ── */
+        .page-header {
+            display: flex; flex-direction: column; gap: 8px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            position: relative;
         }
-        .header-banner h1 { 
-            margin: 0; font-size: 2.8rem; font-weight: 900; color: var(--p);
-            text-shadow: 0 0 15px var(--p-glow); letter-spacing: 2px;
+        .page-header-tag {
+            font-family: 'Rajdhani'; font-size: 0.7rem; letter-spacing: 5px;
+            color: var(--accent); text-transform: uppercase;
         }
-        .header-deco { font-size: 0.7rem; color: var(--sub); letter-spacing: 5px; margin-top: 10px; }
-        
-        .container { 
-            width: 95%; max-width: 1100px; display: flex; flex-direction: column; 
-            align-items: center; gap: 40px; padding: 40px 0 100px 0;
+        .page-header h1 {
+            font-family: 'Rajdhani', 'Noto Sans SC', sans-serif;
+            font-size: 2.4rem; font-weight: 700; letter-spacing: 2px;
+            color: var(--text-hi);
+            text-shadow: 0 0 30px rgba(232,169,69,0.2);
+        }
+        .page-header-sub {
+            font-size: 0.8rem; color: var(--text-mid); letter-spacing: 2px;
+        }
+        .page-header::after {
+            content: "";
+            position: absolute; bottom: -1px; left: 0;
+            width: 120px; height: 2px;
+            background: linear-gradient(90deg, var(--accent), transparent);
         }
 
-        /* 赛博风格卡片 */
-        .cyber-card {
-            width: 100%; background: var(--card); border: 1px solid var(--border);
-            padding: 40px; position: relative; display: flex; flex-direction: column; align-items: center;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        /* ── 面板通用 ── */
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
         }
-        /* 四角装饰 */
-        .cyber-card::before { content: ""; position: absolute; top: -2px; left: -2px; width: 20px; height: 20px; border-top: 3px solid var(--p); border-left: 3px solid var(--p); }
-        .cyber-card::after { content: ""; position: absolute; bottom: -2px; right: -2px; width: 20px; height: 20px; border-bottom: 3px solid var(--p); border-right: 3px solid var(--p); }
+        .panel::before {
+            content: "";
+            position: absolute; top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent2), transparent);
+            opacity: 0.5;
+        }
+        .panel-header {
+            padding: 14px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(0,0,0,0.2);
+        }
+        .panel-header-icon {
+            width: 4px; height: 18px;
+            background: var(--accent);
+            flex-shrink: 0;
+        }
+        .panel-header-title {
+            font-family: 'Rajdhani'; font-size: 0.75rem; font-weight: 600;
+            letter-spacing: 4px; text-transform: uppercase; color: var(--text-mid);
+        }
+        .panel-header-right {
+            margin-left: auto;
+            font-family: 'Rajdhani'; font-size: 0.65rem;
+            color: var(--text-lo); letter-spacing: 2px;
+        }
+        .panel-body { padding: 28px 24px; }
 
-        /* 大数字显示区 */
-        .monitor-screen {
-            background: #0a0a0a; width: 100%; max-width: 600px; padding: 30px;
-            border: 1px solid #444; border-radius: 5px; box-shadow: inset 0 0 30px #000;
-            margin-bottom: 20px; position: relative;
+        /* ── 计数器主区域 ── */
+        .count-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
         }
-        #count-val { 
-            font-size: 9rem; font-weight: 900; color: var(--p); line-height: 0.9;
-            text-shadow: 0 0 20px var(--p-glow); font-family: 'Courier New', monospace;
-        }
-        .screen-label { color: var(--sub); font-size: 0.8rem; margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; }
+        @media(max-width:700px){ .count-layout{ grid-template-columns:1fr; } }
 
-        /* 核心记录按钮 */
+        .count-display {
+            background: var(--bg-deep);
+            border: 1px solid var(--border-hi);
+            padding: 32px;
+            display: flex; flex-direction: column; align-items: flex-start;
+            position: relative; overflow: hidden;
+        }
+        .count-display::before {
+            content: "";
+            position: absolute; top: -40px; right: -40px;
+            width: 120px; height: 120px;
+            border: 1px solid var(--accent);
+            transform: rotate(45deg); opacity: 0.08;
+        }
+        .count-display::after {
+            content: "";
+            position: absolute; top: -20px; right: -20px;
+            width: 80px; height: 80px;
+            border: 1px solid var(--accent);
+            transform: rotate(45deg); opacity: 0.06;
+        }
+        .count-label {
+            font-family: 'Rajdhani'; font-size: 0.65rem; letter-spacing: 4px;
+            color: var(--text-lo); text-transform: uppercase; margin-bottom: 12px;
+        }
+        #count-val {
+            font-family: 'Rajdhani', monospace;
+            font-size: 7rem; font-weight: 700; line-height: 1;
+            color: var(--accent);
+            text-shadow: 0 0 40px rgba(232,169,69,0.3);
+            letter-spacing: -2px;
+        }
+        .count-unit {
+            font-size: 0.7rem; letter-spacing: 3px;
+            color: var(--text-lo); margin-top: 8px;
+        }
+        .count-divider { width: 40px; height: 1px; background: var(--accent); margin: 16px 0; }
+        .count-status {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.72rem; color: var(--text-mid);
+        }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+
+        .count-right { display: flex; flex-direction: column; gap: 16px; }
+
+        /* ── 主按钮 ── */
         #btn-main {
-            width: 300px; height: 80px; background: #000; border: 2px solid var(--p);
-            color: var(--p); font-size: 1.4rem; font-weight: 900; cursor: pointer;
-            text-transform: uppercase; position: relative; overflow: hidden;
-            transition: 0.2s; letter-spacing: 2px; margin-top: 20px;
+            width: 100%; height: 72px;
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-family: 'Rajdhani', 'Noto Sans SC';
+            font-size: 1.1rem; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase;
+            cursor: pointer;
+            position: relative; overflow: hidden;
+            transition: all 0.2s;
+            clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
         }
-        #btn-main:hover { background: var(--p); color: #000; box-shadow: 0 0 30px var(--p-glow); }
-        #btn-main:active { transform: translateY(4px); }
-
-        /* 繁琐的留言板 */
-        .msg-container { width: 100%; background: #161616; padding: 20px; border: 1px dashed #444; }
-        .msg-scroll { height: 400px; overflow-y: scroll; padding: 10px; }
-        .msg-item { 
-            background: #222; border-left: 4px solid var(--gold); padding: 15px; 
-            margin-bottom: 15px; text-align: left; position: relative;
+        #btn-main::before {
+            content: "";
+            position: absolute; inset: 0;
+            background: var(--accent);
+            transform: translateX(-101%);
+            transition: transform 0.3s ease;
+            z-index: 0;
         }
-        .msg-item::after { content: "COMM-ID"; position: absolute; right: 10px; top: 5px; font-size: 0.5rem; color: #444; }
-        .msg-meta { font-size: 0.75rem; color: var(--sub); margin-bottom: 5px; }
-        .geek-name { color: var(--neon); font-weight: bold; margin-right: 10px; }
+        #btn-main:hover::before { transform: translateX(0); }
+        #btn-main:hover { color: #000; letter-spacing: 6px; }
+        #btn-main:active { transform: translateY(2px); }
+        #btn-main span { position: relative; z-index: 1; }
 
-        /* 输入区域 */
-        .input-grid { width: 100%; display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; margin-top: 20px; }
-        input { background: #000; border: 1px solid #444; color: #fff; padding: 15px; font-size: 0.9rem; outline: none; }
-        input:focus { border-color: var(--neon); }
-        #btn-send { background: var(--neon); color: #000; border: none; padding: 0 25px; font-weight: bold; cursor: pointer; }
-
-        /* 进度条与笑话 */
-        #joke-text { font-size: 1.1rem; color: #bbb; line-height: 1.8; text-align: center; margin: 30px 0; min-height: 80px; border: 1px solid #333; padding: 20px; background: #151515; }
-        .prog-shell { width: 100%; height: 6px; background: #333; position: relative; }
-        #prog-bar { height: 100%; width: 0%; background: var(--p); box-shadow: 0 0 10px var(--p); }
-
-        /* 图表 */
-        .chart-wrap { width: 100%; height: 350px; margin-top: 30px; padding: 20px; background: #0c0c0c; border: 1px solid #222; }
-
-        /* 状态指示灯 */
-        .status-bar { width: 100%; display: flex; justify-content: center; gap: 20px; margin-top: 10px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #333; }
-        .dot.active { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
-
-        @media (max-width: 700px) {
-            #count-val { font-size: 5rem; }
-            .input-grid { grid-template-columns: 1fr; }
-            #btn-main { width: 100%; }
+        /* ── 统计小卡 ── */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 14px 16px;
+            position: relative;
         }
+        .stat-card::after {
+            content: "";
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent2), transparent);
+        }
+        .stat-label { font-size: 0.62rem; letter-spacing: 2px; color: var(--text-lo); font-family: 'Rajdhani'; text-transform: uppercase; }
+        .stat-val { font-family: 'Rajdhani'; font-size: 1.6rem; font-weight: 700; color: var(--accent2); margin-top: 4px; }
+
+        /* ── 图表 ── */
+        .chart-wrap { width: 100%; height: 300px; padding: 8px; }
+
+        /* ── 情报板 ── */
+        .broadcast-inner {
+            background: var(--bg-deep);
+            border: 1px solid var(--border);
+            padding: 24px 28px;
+            min-height: 100px;
+            position: relative;
+        }
+        .broadcast-inner::before {
+            content: "// LIVE";
+            position: absolute; top: 10px; right: 14px;
+            font-family: 'Rajdhani'; font-size: 0.6rem;
+            letter-spacing: 2px; color: var(--green);
+        }
+        #joke-text {
+            font-size: 0.95rem; color: var(--text-hi); line-height: 1.9;
+            min-height: 60px;
+        }
+        #joke-text b { color: var(--accent); font-weight: 500; }
+
+        .prog-wrapper {
+            margin-top: 16px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .prog-label { font-family: 'Rajdhani'; font-size: 0.65rem; letter-spacing: 2px; color: var(--text-lo); flex-shrink: 0; }
+        .prog-shell { flex: 1; height: 4px; background: var(--bg-deep); border: 1px solid var(--border); position: relative; }
+        #prog-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent2), var(--accent)); box-shadow: 0 0 8px var(--accent2); transition: width 0.1s linear; }
+
+        /* ── 通讯信道 ── */
+        .msg-scroll {
+            height: 380px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 10px;
+            padding: 4px 0;
+        }
+        .msg-scroll::-webkit-scrollbar { width: 4px; }
+        .msg-scroll::-webkit-scrollbar-track { background: var(--bg-deep); }
+        .msg-scroll::-webkit-scrollbar-thumb { background: var(--border-hi); }
+
+        .msg-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent2);
+            padding: 12px 16px;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+        .msg-item:hover { border-left-color: var(--accent); }
+        .msg-meta {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 6px;
+        }
+        .msg-tag {
+            font-family: 'Rajdhani'; font-size: 0.62rem;
+            letter-spacing: 2px; color: var(--text-lo);
+            background: var(--bg-deep); border: 1px solid var(--border);
+            padding: 1px 6px;
+        }
+        .geek-name {
+            font-family: 'Rajdhani'; font-size: 0.85rem; font-weight: 600;
+            color: var(--accent); letter-spacing: 1px;
+        }
+        .msg-time { font-size: 0.68rem; color: var(--text-lo); margin-left: auto; font-family: 'Rajdhani'; }
+        .msg-content { font-size: 0.88rem; color: var(--text-hi); line-height: 1.6; }
+
+        /* ── 输入区 ── */
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 200px auto;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        @media(max-width:700px){ .input-row{ grid-template-columns:1fr; } }
+
+        .ak-input {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-hi);
+            padding: 12px 16px;
+            font-size: 0.88rem;
+            font-family: 'Noto Sans SC', sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+            clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+        }
+        .ak-input::placeholder { color: var(--text-lo); }
+        .ak-input:focus { border-color: var(--accent2); }
+
+        #btn-send {
+            background: var(--accent2);
+            border: none; color: #fff;
+            padding: 0 24px;
+            font-family: 'Rajdhani'; font-size: 0.85rem; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase;
+            cursor: pointer;
+            clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+            transition: all 0.2s;
+        }
+        #btn-send:hover { background: var(--accent); color: #000; }
+
+        /* ── 分割线装饰 ── */
+        .section-divider {
+            display: flex; align-items: center; gap: 12px;
+            color: var(--text-lo); font-family: 'Rajdhani'; font-size: 0.65rem; letter-spacing: 4px;
+        }
+        .section-divider::before, .section-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+        /* ── 装饰角标 ── */
+        .corner-tl, .corner-br { position: absolute; width: 12px; height: 12px; }
+        .corner-tl { top: -1px; left: -1px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+        .corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+
+        /* ── 图表双栏 ── */
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+        @media(max-width:900px){ .two-col{ grid-template-columns:1fr; } }
+
+        .chart-panel-label {
+            font-family: 'Rajdhani'; font-size: 0.65rem; letter-spacing: 3px;
+            color: var(--text-lo); text-transform: uppercase; margin-bottom: 8px;
+        }
+
+        /* 扫描线动画：直接作用于你原有的 #btn-main */
+#btn-main { position: relative; overflow: hidden; }
+#btn-main::after {
+    content: ""; position: absolute; top: -100%; left: 0; width: 100%; height: 2px;
+    background: var(--accent); opacity: 0.5; animation: scan-logic 3s linear infinite;
+}
+@keyframes scan-logic { 0% { top: -100%; } 100% { top: 200%; } }
+
+/* 战术监控小窗 - 精简版 */
+#diag-widget {
+    position: fixed;
+    right: -320px; 
+    top: 120px;
+    width: 240px; /* 进一步收窄，更省空间 */
+    background: rgba(13, 17, 23, 0.9);
+    border: 1px solid var(--accent2); /* 医疗蓝边框 */
+    border-left: 4px solid var(--accent2);
+    padding: 12px 18px;
+    z-index: 9999;
+    backdrop-filter: blur(8px);
+    transition: right 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.2);
+    box-shadow: -5px 5px 20px rgba(0,0,0,0.6);
+}
+
+#diag-widget.active { right: 20px; }
+
+.widget-header {
+    font-family: 'Rajdhani';
+    font-size: 0.65rem;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    border-bottom: 1px solid rgba(91, 155, 213, 0.3);
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.widget-line {
+    font-size: 0.75rem;
+    margin: 6px 0;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Rajdhani', sans-serif;
+}
+
+.widget-line span { color: var(--text-lo); }
+.widget-line b { color: var(--text-hi); font-weight: 600; }
+.status-ok { color: var(--green); font-size: 0.6rem; margin-top: 8px; border-top: 1px solid var(--border); pt: 5px; }
+
+
+
+
+/* --- 全高度战术侧边栏 --- */
+.side-tower {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 200px;
+    background: linear-gradient(180deg, rgba(13,17,23,0.95) 0%, rgba(22,28,38,0.8) 100%);
+    border-right: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+    padding: 20px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    z-index: 90;
+    font-family: 'Rajdhani', sans-serif;
+    backdrop-filter: blur(15px);
+    overflow: hidden;
+}
+
+#tower-left { left: 0; border-right: 2px solid var(--accent); }
+#tower-right { right: 0; border-left: 2px solid var(--accent2); }
+
+.tower-section { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
+.tower-label { font-size: 0.65rem; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; display: block; }
+.tower-data { font-size: 1.1rem; color: var(--text-hi); font-weight: 700; font-family: monospace; }
+.tower-sub { font-size: 0.6rem; color: var(--text-lo); margin-top: 4px; }
+
+/* 扫描动效 */
+.scanning-bar {
+    width: 100%; height: 2px; background: var(--accent); 
+    box-shadow: 0 0 10px var(--accent); position: relative;
+    animation: tower-scan 4s linear infinite;
+}
+@keyframes tower-scan { 0% { top: 0; opacity: 0; } 50% { opacity: 1; } 100% { top: 100px; opacity: 0; } }
+
+/* 响应式：屏幕不够宽时自动隐藏侧边栏，防止遮挡中间内容 */
+@media (max-width: 1400px) {
+    .side-tower { display: none; }
+}
+
+
+
+
+
+/* 在线状态指示灯 */
+.online-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 255, 127, 0.05);
+    padding: 10px;
+    border-radius: 4px;
+    border-left: 2px solid #00ff7f;
+}
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #00ff7f;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #00ff7f;
+    animation: pulse-green 2s infinite;
+}
+@keyframes pulse-green {
+    0% { transform: scale(0.95); opacity: 0.7; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+
+
+
+
     </style>
 </head>
 <body>
 
-    <header class="header-banner">
-        <div class="header-deco">[ 系统版本: v17.0.42-STABLE ]</div>
-        <h1>💥 大葱肚肚痛监测终端</h1>
-        <div class="header-deco">━━━━ 泰拉大陆情报同步中心 ━━━━</div>
-    </header>
+<!-- TOP NAV -->
+<nav class="topnav">
+    <div class="nav-logo">
+        <div class="nav-logo-icon"></div>
+        <span class="nav-title">Rhodes Island</span>
+    </div>
+    <div class="nav-right">
+        <span class="nav-tag">SYS.VER 17.0.42</span>
+        <div class="nav-dot"></div>
+    </div>
+</nav>
 
-    <div class="container">
-        <div class="cyber-card">
-            <div class="monitor-screen">
-                <div class="status-bar">
-                    <div class="dot active"></div><div class="dot active"></div><div class="dot active"></div>
-                    <span style="font-size: 0.6rem; color: #0f0;">系统运行正常 // 实时同步中</span>
-                </div>
-                <div id="count-val">0</div>
-                <div class="screen-label">今日痛感累计报告次数 (UNIT: TIMES)</div>
-            </div>
-            
-            <button id="btn-main">立即提交痛感报告</button>
-            
-            <div class="chart-wrap">
-                <canvas id="chartHour"></canvas>
-            </div>
-            <div class="screen-label">24小时活动频率监测曲线</div>
+<div class="wrapper">
+
+    <!-- 页眉 -->
+    <div class="page-header">
+        <div class="page-header-tag">Medical Monitor Terminal · 医疗监测终端</div>
+        <h1>💥 大葱肚肚痛监测系统</h1>
+        <div class="page-header-sub">━━ 泰拉大陆 情报同步中心 · TERRA INTELLIGENCE SYNC CENTER ━━</div>
+    </div>
+
+    <!-- 计数 + 图表 主面板 -->
+    <div class="panel" style="position:relative">
+        <div class="corner-tl"></div><div class="corner-br"></div>
+        <div class="panel-header">
+            <div class="panel-header-icon"></div>
+            <span class="panel-header-title">痛感累计报告 · Pain Report Monitor</span>
+            <span class="panel-header-right">UNIT: TIMES · 实时同步</span>
         </div>
-
-        <div class="cyber-card">
-            <div class="screen-label">泰拉情报广播站 // TERRA BROADCAST</div>
-            <div id="joke-text">正在监听卫星信号...</div>
-            <div class="prog-shell"><div id="prog-bar"></div></div>
-            <div style="font-size: 0.6rem; color: #444; margin-top: 10px;">下一条情报同步预计耗时: 15.00s</div>
-        </div>
-
-        <div class="cyber-card">
-            <div class="screen-label">极客通讯信道 // GEEK CHANNEL</div>
-            <div class="msg-container">
-                <div class="msg-scroll" id="msg-list">
+        <div class="panel-body">
+            <div class="count-layout">
+                <!-- 左：数字显示 -->
+                <div class="count-display">
+                    <div class="count-label">今日累计报告次数 / Today's Reports</div>
+                    <div id="count-val">0</div>
+                    <div class="count-divider"></div>
+                    <div class="count-status">
+                        <div class="status-dot"></div>
+                        <span>系统运行正常 · 数据同步中</span>
                     </div>
-            </div>
-            <div class="input-grid">
-                <input type="text" id="in-content" placeholder="输入极客观点...">
-                <input type="text" id="in-author" placeholder="著名字号">
-                <button id="btn-send">发送通讯</button>
-            </div>
-        </div>
+                    <div class="count-unit">REPORT COUNT · UNIT: TIMES</div>
+                </div>
 
-        <div class="cyber-card">
-            <div class="screen-label">周期性趋势分析 // 7-DAY ANALYTICS</div>
-            <div class="chart-wrap">
-                <canvas id="chartDay"></canvas>
+                <!-- 右：按钮+统计 -->
+                <div class="count-right">
+                    <button id="btn-main"><span>⚕ 立即提交痛感报告</span></button>
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">实时状态</div>
+                            <div class="stat-val" style="color:var(--green);font-size:0.9rem;letter-spacing:1px;margin-top:8px">● LIVE</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">同步间隔</div>
+                            <div class="stat-val">30s</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">系统版本</div>
+                            <div class="stat-val" style="font-size:1rem;letter-spacing:1px;margin-top:6px">v17.0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">数据源</div>
+                            <div class="stat-val" style="font-size:1rem;letter-spacing:1px;margin-top:6px">Supabase</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        const SB_URL = "https://nbhaqiynakkdlequbpbh.supabase.co"; 
-        const SB_KEY = "sb_publishable_MfHndIpykrX79UrvosT9Nw_JxCYYfbp"; 
-        const sbClient = supabase.createClient(SB_URL, SB_KEY);
+    <!-- 图表双栏 -->
+    <div class="two-col">
+        <div class="panel" style="position:relative">
+            <div class="corner-tl"></div><div class="corner-br"></div>
+            <div class="panel-header">
+                <div class="panel-header-icon" style="background:var(--accent2)"></div>
+                <span class="panel-header-title">24小时活动曲线 · Hourly Activity</span>
+            </div>
+            <div class="panel-body" style="padding-top:12px">
+                <div class="chart-wrap">
+                    <canvas id="chartHour"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="panel" style="position:relative">
+            <div class="corner-tl"></div><div class="corner-br"></div>
+            <div class="panel-header">
+                <div class="panel-header-icon" style="background:var(--red)"></div>
+                <span class="panel-header-title">7日趋势分析 · 7-Day Analytics</span>
+            </div>
+            <div class="panel-body" style="padding-top:12px">
+                <div class="chart-wrap">
+                    <canvas id="chartDay"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // --- 完整地名库 (回填) ---
-        const LOCS = [
-            "龙门·近卫局 👮", "龙门·贫民窟 🍜", "龙门·商业区 🏮", "龙门·中环总署 🏢", "龙门·码头仓库 📦", "罗德岛·本舰 🚢", "罗德岛·医疗部 💉", "罗德岛·食堂 🥗", "罗德岛·舰桥 🔭", "罗德岛·干员宿舍 🛏️",
-            "叙拉古·帕勒莫 🐺", "叙拉古·新沃尔西尼 🍕", "叙拉古·歌剧院 🎭", "叙拉古·西西里亚 🍷", "叙拉古·葡萄庄园 🍇", "卡西米尔·大骑士领 🐴", "卡西米尔·商业联合会 💰", "卡西米尔·零号竞技场 🏟️", "卡西米尔·玛利亚的工坊 🛠️", "卡西米尔·酒吧 🍻",
-            "哥伦比亚·特里蒙特 🏙️", "哥伦比亚·拓荒地 🌵", "哥伦比亚·科学考察站 🧬", "哥伦比亚·曼哈顿实验区 🧪", "哥伦比亚·电子游戏中心 🎮", "炎国·尚蜀 🍵", "炎国·玉门 ⚔️", "炎国·勾吴 🌊", "炎国·夕阁 ⛩️", "炎国·书画院 🖌️",
-            "乌萨斯·切尔诺伯格 🐻", "乌萨斯·圣骏堡 🏰", "乌萨斯·极北荒原 ❄️", "乌萨斯·废弃矿井 🏚️", "乌萨斯·雪原列车 🚞", "维多利亚·伦蒂尼姆 🦁", "维多利亚·郡立监狱 🔒", "维多利亚·格拉斯哥街道 🐱", "维多利亚·蒸汽工厂 ⚙️", "维多利亚·诺曼底 🛳️",
-            "拉特兰·第六枢机 😇", "拉特兰·公证所 ⚖️", "拉特兰·甜品店 🍮", "拉特兰·中央教堂 ⛪", "拉特兰·铳械工坊 🔫", "阿戈尔·深海 🌊", "阿戈尔·水底都市 💎", "阿戈尔·珊瑚礁 🐙", "伊比利亚·愚人号 ⚓", "伊比利亚·盐风城 🧂",
-            "谢拉格·希瓦艾什领 ❄️", "谢拉格·圣山 🏔️", "谢拉格·冰原火车站 🚂", "谢拉格·雪山神庙 🗻", "萨米·安塔鲁特 🌲", "萨米·无穷冰原 🌌", "萨米·观星台 🔭", "萨尔贡·雨林 🌴", "萨尔贡·遗迹 🏛️", "萨尔贡·帕夏领 🦂",
-            "莱塔尼亚·夕照区 🎵", "莱塔尼亚·威廉大学 🎓", "米诺斯·体育场 🐂", "米诺斯·神庙 🏛️", "东国·樱花林 🌸", "东国·武士道场 🗡️", "雷姆必拓·矿场 🐰", "雷姆必拓·核心城 🏗️", "雷姆必拓·钻井平台 🔨", "汐斯塔·黑曜石沙滩 🏖️",
-            "汐斯塔·音乐节现场 🎸", "玻利瓦尔·多索雷斯 🍹", "玻利瓦尔·总统府 🏛️", "卡兹戴尔·碎片大厦 🏗️", "卡兹戴尔·深渊 🌑", "卡兹戴尔·佣兵营地 ⛺", "拉特兰·巧克力工厂 🍫", "炎国·江南水乡 🛶", "叙拉古·市政大楼 🏛️", "龙门·天际线广场 🌆",
-            "哥伦比亚·白沙滩 🏖️", "乌萨斯·贵族沙龙 🎩", "谢拉格·商业街 🏪", "雷姆必拓·地下管道 ⚙️", "米诺斯·橄榄园 🌿", "东国·温泉旅馆 ♨️", "萨米·极光观测站 🔭", "伊比利亚·灯塔 🕯️", "炎国·点心铺 🥟", "罗德岛·后勤部 🚚"
-        ];
+    <!-- 情报广播 -->
+    <div class="panel" style="position:relative">
+        <div class="corner-tl"></div><div class="corner-br"></div>
+        <div class="panel-header">
+            <div class="panel-header-icon" style="background:var(--accent)"></div>
+            <span class="panel-header-title">泰拉情报广播站 · Terra Broadcast</span>
+            <span class="panel-header-right">信号接收中 · SIGNAL RECEIVING</span>
+        </div>
+        <div class="panel-body">
+            <div class="broadcast-inner">
+                <div id="joke-text">正在监听卫星信号...</div>
+            </div>
+            <div class="prog-wrapper">
+                <span class="prog-label">SYNC</span>
+                <div class="prog-shell"><div id="prog-bar"></div></div>
+                <span class="prog-label" id="prog-sec">15.0s</span>
+            </div>
+        </div>
+    </div>
 
-        // --- 完整地狱笑话 (回填) ---
-        const JOKES = [
-            "<b>叙拉古：</b>永远不要在意面上挤番茄酱，除非你想被塞进油桶沉入荒野地底。🥫",
-            "<b>拉特兰：</b>邻里纠纷全靠炸弹回声，爆炸不够清脆说明你的信仰不足。💣",
-            "<b>哥伦比亚：</b>路边的猫都能给你讲三分钟创投计划，不听它就起诉你。💼",
-            "<b>乌萨斯：</b>这里没有感冒，只有伏特加纯度不够和风雪不够喧嚣。🥃",
-            "<b>阿戈尔：</b>看电影不看剧情，只看水波纹。如果不够圆润，他们会集体退场。🌊",
-            "<b>卡西米尔：</b>骑士不一定骑马，但一定要会摆POSE。闪光灯不够亮就不配比赛。📸",
-            "<b>龙门：</b>友谊的标准很简单——能否帮我在贫民窟抢到一个限量版叉烧包。🥟",
-            "<b>罗德岛：</b>博士指挥时最怕的不是敌袭，而是凯尔希的‘报告没写完’。📑",
-            "<b>维多利亚：</b>伦蒂尼姆能一天经历四季，三次示威，和一场必迟到的下午茶。☕",
-            "<b>谢拉格：</b>迷路了喊声‘银灰老爷万岁’，就会有黑西装带你去喝咖啡。❄️",
-            "<b>萨米：</b>从不担心迷路，只担心北极星今天是不是又在偷偷跟他们说话。🌌",
-            "<b>伊比利亚：</b>巨大的灯塔不是指引船只，是为了震慑章鱼。🕯️",
-            "<b>莱塔尼亚：</b>教授能在讲量子力学时用大提琴拉出致郁曲，让全班申请休学。🎻",
-            "<b>卡兹戴尔：</b>拆迁办只要贴上‘萨卡兹秘密基地’标签，第二天地基都没了。🏗️",
-            "<b>玻利瓦尔：</b>总统选举看谁在多索雷斯水上摩托赛不掉下来，谁就能执政。🍹",
-            "<b>米诺斯：</b>如果你看到一群人在追一头牛，别奇怪，那是早操。🐂",
-            "<b>东国：</b>在东国，如果你不会写俳句，甚至没法去便利店买一盒纳豆。🌸",
-            "<b>雷姆必拓：</b>兔子不仅会打洞，还会用电钻在你的支票本上钻个洞。🐰",
-            "<b>汐斯塔：</b>海滩很安全，除了偶尔岩浆会把你的泳裤烫焦之外。🏖️",
-            "<b>炎国：</b>喝茶讲究意境，如果云雾不够飘逸，这杯毛尖就算白泡了。🍵"
-        ];
+    <!-- 通讯信道 -->
+    <div class="panel" style="position:relative">
+        <div class="corner-tl"></div><div class="corner-br"></div>
+        <div class="panel-header">
+            <div class="panel-header-icon" style="background:var(--accent2)"></div>
+            <span class="panel-header-title">极客通讯信道 · Geek Channel</span>
+            <span class="panel-header-right">COMM-CHANNEL · OPEN</span>
+        </div>
+        <div class="panel-body">
+            <div class="msg-scroll" id="msg-list"></div>
+            <div class="section-divider" style="margin:20px 0 0">发送通讯</div>
+            <div class="input-row">
+                <input class="ak-input" type="text" id="in-content" placeholder="输入极客观点...">
+                <input class="ak-input" type="text" id="in-author" placeholder="著名字号">
+                <button id="btn-send">发送通讯</button>
+            </div>
+        </div>
+    </div>
 
-        let chartH = null, chartD = null, jokeProgress = 0;
+</div>
 
-        document.getElementById('btn-send').onclick = async () => {
-            const content = document.getElementById('in-content').value;
-            const author = document.getElementById('in-author').value || "未知极客";
-            if(!content) return;
-            await sbClient.from('messages').insert([{ content, author }]);
-            document.getElementById('in-content').value = "";
-            fetchMessages();
-        };
+<script>
+    const SB_URL = "https://nbhaqiynakkdlequbpbh.supabase.co";
+    const SB_KEY = "sb_publishable_MfHndIpykrX79UrvosT9Nw_JxCYYfbp";
+    const sbClient = supabase.createClient(SB_URL, SB_KEY);
 
-        document.getElementById('btn-main').onclick = async () => {
-            const loc = LOCS[Math.floor(Math.random()*LOCS.length)];
-            await sbClient.from('records').insert([{ location: loc }]);
-            fetchData();
-        };
+    const LOCS = [
+        "龙门·近卫局 👮","龙门·贫民窟 🍜","龙门·商业区 🏮","龙门·中环总署 🏢","龙门·码头仓库 📦","罗德岛·本舰 🚢","罗德岛·医疗部 💉","罗德岛·食堂 🥗","罗德岛·舰桥 🔭","罗德岛·干员宿舍 🛏️",
+        "叙拉古·帕勒莫 🐺","叙拉古·新沃尔西尼 🍕","叙拉古·歌剧院 🎭","叙拉古·西西里亚 🍷","叙拉古·葡萄庄园 🍇","卡西米尔·大骑士领 🐴","卡西米尔·商业联合会 💰","卡西米尔·零号竞技场 🏟️","卡西米尔·玛利亚的工坊 🛠️","卡西米尔·酒吧 🍻",
+        "哥伦比亚·特里蒙特 🏙️","哥伦比亚·拓荒地 🌵","哥伦比亚·科学考察站 🧬","哥伦比亚·曼哈顿实验区 🧪","哥伦比亚·电子游戏中心 🎮","炎国·尚蜀 🍵","炎国·玉门 ⚔️","炎国·勾吴 🌊","炎国·夕阁 ⛩️","炎国·书画院 🖌️",
+        "乌萨斯·切尔诺伯格 🐻","乌萨斯·圣骏堡 🏰","乌萨斯·极北荒原 ❄️","乌萨斯·废弃矿井 🏚️","乌萨斯·雪原列车 🚞","维多利亚·伦蒂尼姆 🦁","维多利亚·郡立监狱 🔒","维多利亚·格拉斯哥街道 🐱","维多利亚·蒸汽工厂 ⚙️","维多利亚·诺曼底 🛳️",
+        "拉特兰·第六枢机 😇","拉特兰·公证所 ⚖️","拉特兰·甜品店 🍮","拉特兰·中央教堂 ⛪","拉特兰·铳械工坊 🔫","阿戈尔·深海 🌊","阿戈尔·水底都市 💎","阿戈尔·珊瑚礁 🐙","伊比利亚·愚人号 ⚓","伊比利亚·盐风城 🧂",
+        "谢拉格·希瓦艾什领 ❄️","谢拉格·圣山 🏔️","谢拉格·冰原火车站 🚂","谢拉格·雪山神庙 🗻","萨米·安塔鲁特 🌲","萨米·无穷冰原 🌌","萨米·观星台 🔭","萨尔贡·雨林 🌴","萨尔贡·遗迹 🏛️","萨尔贡·帕夏领 🦂",
+        "莱塔尼亚·夕照区 🎵","莱塔尼亚·威廉大学 🎓","米诺斯·体育场 🐂","米诺斯·神庙 🏛️","东国·樱花林 🌸","东国·武士道场 🗡️","雷姆必拓·矿场 🐰","雷姆必拓·核心城 🏗️","雷姆必拓·钻井平台 🔨","汐斯塔·黑曜石沙滩 🏖️",
+        "汐斯塔·音乐节现场 🎸","玻利瓦尔·多索雷斯 🍹","玻利瓦尔·总统府 🏛️","卡兹戴尔·碎片大厦 🏗️","卡兹戴尔·深渊 🌑","卡兹戴尔·佣兵营地 ⛺","拉特兰·巧克力工厂 🍫","炎国·江南水乡 🛶","叙拉古·市政大楼 🏛️","龙门·天际线广场 🌆",
+        "哥伦比亚·白沙滩 🏖️","乌萨斯·贵族沙龙 🎩","谢拉格·商业街 🏪","雷姆必拓·地下管道 ⚙️","米诺斯·橄榄园 🌿","东国·温泉旅馆 ♨️","萨米·极光观测站 🔭","伊比利亚·灯塔 🕯️","炎国·点心铺 🥟","罗德岛·后勤部 🚚"
+    ];
 
-        async function fetchMessages() {
-            const { data } = await sbClient.from('messages').select('*').order('created_at', { ascending: false }).limit(15);
-            if(data) {
-                document.getElementById('msg-list').innerHTML = data.map(m => `
-                    <div class="msg-item">
-                        <div class="msg-meta"><span class="geek-name">@${m.author}</span> ${new Date(m.created_at).toLocaleString()}</div>
-                        <div>${m.content}</div>
+    const JOKES = [
+        "<b>叙拉古：</b>永远不要在意面上挤番茄酱，除非你想被塞进油桶沉入荒野地底。🥫",
+        "<b>拉特兰：</b>邻里纠纷全靠炸弹回声，爆炸不够清脆说明你的信仰不足。💣",
+        "<b>哥伦比亚：</b>路边的猫都能给你讲三分钟创投计划，不听它就起诉你。💼",
+        "<b>乌萨斯：</b>这里没有感冒，只有伏特加纯度不够和风雪不够喧嚣。🥃",
+        "<b>阿戈尔：</b>看电影不看剧情，只看水波纹。如果不够圆润，他们会集体退场。🌊",
+        "<b>卡西米尔：</b>骑士不一定骑马，但一定要会摆POSE。闪光灯不够亮就不配比赛。📸",
+        "<b>龙门：</b>友谊的标准很简单——能否帮我在贫民窟抢到一个限量版叉烧包。🥟",
+        "<b>罗德岛：</b>博士指挥时最怕的不是敌袭，而是凯尔希的'报告没写完'。📑",
+        "<b>维多利亚：</b>伦蒂尼姆能一天经历四季，三次示威，和一场必迟到的下午茶。☕",
+        "<b>谢拉格：</b>迷路了喊声'银灰老爷万岁'，就会有黑西装带你去喝咖啡。❄️",
+        "<b>萨米：</b>从不担心迷路，只担心北极星今天是不是又在偷偷跟他们说话。🌌",
+        "<b>伊比利亚：</b>巨大的灯塔不是指引船只，是为了震慑章鱼。🕯️",
+        "<b>莱塔尼亚：</b>教授能在讲量子力学时用大提琴拉出致郁曲，让全班申请休学。🎻",
+        "<b>卡兹戴尔：</b>拆迁办只要贴上'萨卡兹秘密基地'标签，第二天地基都没了。🏗️",
+        "<b>玻利瓦尔：</b>总统选举看谁在多索雷斯水上摩托赛不掉下来，谁就能执政。🍹",
+        "<b>米诺斯：</b>如果你看到一群人在追一头牛，别奇怪，那是早操。🐂",
+        "<b>东国：</b>在东国，如果你不会写俳句，甚至没法去便利店买一盒纳豆。🌸",
+        "<b>雷姆必拓：</b>兔子不仅会打洞，还会用电钻在你的支票本上钻个洞。🐰",
+        "<b>汐斯塔：</b>海滩很安全，除了偶尔岩浆会把你的泳裤烫焦之外。🏖️",
+        "<b>炎国：</b>喝茶讲究意境，如果云雾不够飘逸，这杯毛尖就算白泡了。🍵"
+    ];
+
+    let chartH = null, chartD = null, jokeProgress = 0;
+
+    const chartDefaults = {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { grid: { color: 'rgba(42,58,82,0.6)' }, ticks: { color: '#445566', font: { family: 'Rajdhani', size: 11 } } },
+            y: { beginAtZero: true, grid: { color: 'rgba(42,58,82,0.6)' }, ticks: { color: '#445566', font: { family: 'Rajdhani', size: 11 } } }
+        }
+    };
+
+    document.getElementById('btn-send').onclick = async () => {
+        const content = document.getElementById('in-content').value;
+        const author = document.getElementById('in-author').value || "未知极客";
+        if (!content) return;
+        await sbClient.from('messages').insert([{ content, author }]);
+        document.getElementById('in-content').value = "";
+        fetchMessages();
+    };
+
+    document.getElementById('btn-main').onclick = async () => {
+        const loc = LOCS[Math.floor(Math.random() * LOCS.length)];
+        await sbClient.from('records').insert([{ location: loc }]);
+        fetchData();
+    };
+
+    async function fetchMessages() {
+        const { data } = await sbClient.from('messages').select('*').order('created_at', { ascending: false }).limit(15);
+        if (data) {
+            document.getElementById('msg-list').innerHTML = data.map(m => `
+                <div class="msg-item">
+                    <div class="msg-meta">
+                        <span class="msg-tag">COMM</span>
+                        <span class="geek-name">@${m.author}</span>
+                        <span class="msg-time">${new Date(m.created_at).toLocaleString()}</span>
                     </div>
-                `).join('');
-            }
+                    <div class="msg-content">${m.content}</div>
+                </div>
+            `).join('');
         }
+    }
 
-        async function fetchData() {
-            const now = new Date();
-            const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-            const { count } = await sbClient.from('records').select('*', { count: 'exact', head: true }).gte('created_at', today0);
-            document.getElementById('count-val').innerText = count || 0;
-            const { data: records } = await sbClient.from('records').select('*').order('created_at', { ascending: false }).limit(400);
-            if (records) renderCharts(records, now);
+    async function fetchData() {
+        const now = new Date();
+        const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        const { count } = await sbClient.from('records').select('*', { count: 'exact', head: true }).gte('created_at', today0);
+        document.getElementById('count-val').innerText = count || 0;
+        const { data: records } = await sbClient.from('records').select('*').order('created_at', { ascending: false }).limit(400);
+        if (records) renderCharts(records, now);
+    }
+
+    function renderCharts(records, now) {
+        const hCounts = Array(24).fill(0);
+        const todayStr = now.toLocaleDateString();
+        records.filter(r => new Date(r.created_at).toLocaleDateString() === todayStr)
+               .forEach(r => hCounts[new Date(r.created_at).getHours()]++);
+
+        if (chartH) chartH.destroy();
+        chartH = new Chart(document.getElementById('chartHour').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 24}, (_, i) => i + ":00"),
+                datasets: [{
+                    data: hCounts,
+                    borderColor: '#5b9bd5',
+                    backgroundColor: 'rgba(91,155,213,0.08)',
+                    fill: true, tension: 0.4,
+                    pointRadius: 3, pointBackgroundColor: '#5b9bd5',
+                    borderWidth: 1.5
+                }]
+            },
+            options: chartDefaults
+        });
+
+        const dayCounts = {};
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(now.getTime() - i * 86400000);
+            dayCounts[(d.getMonth()+1)+"/"+d.getDate()] = 0;
         }
+        records.forEach(r => {
+            const d = new Date(r.created_at);
+            const label = (d.getMonth()+1)+"/"+d.getDate();
+            if (dayCounts.hasOwnProperty(label)) dayCounts[label]++;
+        });
 
-        function renderCharts(records, now) {
-            const hCounts = Array(24).fill(0);
-            const todayStr = now.toLocaleDateString();
-            records.filter(r => new Date(r.created_at).toLocaleDateString() === todayStr).forEach(r => hCounts[new Date(r.created_at).getHours()]++);
+        if (chartD) chartD.destroy();
+        chartD = new Chart(document.getElementById('chartDay').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(dayCounts),
+                datasets: [{
+                    data: Object.values(dayCounts),
+                    backgroundColor: 'rgba(232,169,69,0.25)',
+                    borderColor: '#e8a945',
+                    borderWidth: 1
+                }]
+            },
+            options: chartDefaults
+        });
+    }
+
+    let remaining = 15.0;
+    setInterval(() => {
+        jokeProgress += 100;
+        remaining = Math.max(0, 15 - jokeProgress / 1000);
+        document.getElementById('prog-bar').style.width = (jokeProgress / 15000 * 100) + "%";
+        document.getElementById('prog-sec').textContent = remaining.toFixed(1) + "s";
+        if (jokeProgress >= 15000) {
+            document.getElementById('joke-text').innerHTML = JOKES[Math.floor(Math.random() * JOKES.length)];
+            jokeProgress = 0;
+        }
+    }, 100);
+
+    fetchData();
+    fetchMessages();
+    document.getElementById('joke-text').innerHTML = JOKES[0];
+    setInterval(fetchData, 30000);
+
+// 在不破坏原有 index.html 逻辑的前提下注入新交互
+(function injectCoolFeatures() {
+    // 1. 动态插入弹窗 HTML 结构
+    const overlay = document.createElement('div');
+    overlay.id = 'diag-overlay';
+    overlay.innerHTML = `
+        <div class="diag-box">
+            <div style="color:var(--accent); font-weight:700; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">TERMINAL DIAGNOSIS // 实时诊断</div>
+            <div class="diag-line"><span>状态归属:</span> <span class="diag-val" id="d-loc">--</span></div>
+            <div class="diag-line"><span>脉冲频率:</span> <span class="diag-val" id="d-pulse">--</span></div>
+            <div class="diag-line"><span>干员压力:</span> <span class="diag-val" id="d-stress">--</span></div>
+            <div id="d-advice" style="margin-top:15px; font-size:0.85rem; color:var(--green); border-top:1px dashed var(--border); pt:10px;"></div>
+            <button onclick="document.getElementById('diag-overlay').style.display='none'" style="margin-top:20px; width:100%; background:var(--accent); border:none; padding:10px; cursor:pointer; font-weight:bold;">同步完成</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    (function injectSlimWidget() {
+    // 1. 构造精简 HTML
+    const widget = document.createElement('div');
+    widget.id = 'diag-widget';
+    widget.innerHTML = `
+        <div class="widget-header">
+            <span>VITAL SIGNS MONITOR</span>
+            <span style="opacity:0.5">#${Math.floor(Math.random()*9000+1000)}</span>
+        </div>
+        <div class="widget-line"><span>归属地:</span> <b id="w-loc">--</b></div>
+        <div class="widget-line"><span>源石活性:</span> <b id="w-ori">--</b></div>
+        <div class="widget-line"><span>神经脉冲:</span> <b id="w-pulse">--</b></div>
+        <div class="widget-line"><span>数据同步:</span> <b style="color:var(--green)">SUCCESS</b></div>
+        <div class="status-ok">● 终端连接稳定 · 自动监测中</div>
+    `;
+    document.body.appendChild(widget);
+
+    // 2. 挂载点击钩子
+    const btn = document.getElementById('btn-main');
+    const originalClick = btn.onclick;
+    let hideTimeout;
+
+    btn.onclick = async function(e) {
+        // 执行原有逻辑 (Supabase 上报等)
+        if (originalClick) await originalClick.call(this, e);
+
+        // 更新小窗数据
+        const randomLoc = LOCS[Math.floor(Math.random() * LOCS.length)];
+        document.getElementById('w-loc').innerText = randomLoc.split(' ')[0];
+        document.getElementById('w-ori').innerText = (0.1 + Math.random() * 0.05).toFixed(3) + "uL/L";
+        document.getElementById('w-pulse').innerText = Math.floor(Math.random() * 20 + 75) + " BPM";
+
+        // 动效触发
+        clearTimeout(hideTimeout);
+        widget.classList.add('active');
+        hideTimeout = setTimeout(() => {
+            widget.classList.remove('active');
+        }, 3000); // 3秒后自动滑回
+    };
+})();
+
+})();
+
+
+
+
+
+
+
+
+(function injectTowerPanels() {
+    // 1. 注入左侧监控塔
+    const leftTower = document.createElement('div');
+    leftTower.id = 'tower-left';
+    leftTower.className = 'side-tower';
+    leftTower.innerHTML = `
+        <div style="margin-bottom:20px"><img src="https://img.icons8.com/ios-filled/50/e8a945/caduceus.png" style="width:25px;opacity:0.8"/></div>
+        <div class="tower-section">
+            <span class="tower-label">Operator Vital</span>
+            <div class="tower-data" id="v-pulse">-- BPM</div>
+            <div class="tower-sub">神经反馈：稳定</div>
+        </div>
+        <div class="tower-section" style="height:80px;">
+            <span class="tower-label">Neural Wave</span>
+            <canvas id="neuralCanvas" width="170" height="60"></canvas>
+        </div>
+        <div class="tower-section">
+            <span class="tower-label">Infection Level</span>
+            <div style="width:100%; height:4px; background:#222; margin:8px 0;">
+                <div id="infection-bar" style="width:14.2%; height:100%; background:var(--accent);"></div>
+            </div>
+            <div class="tower-sub">体表源石结晶：0.14uL/L</div>
+        </div>
+        <div class="tower-section">
+            <span class="tower-label">Auto Scanning</span>
+            <div style="height:100px; background:rgba(0,0,0,0.2); position:relative;">
+                <div class="scanning-bar"></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(leftTower);
+
+    // 2. 注入右侧情报塔
+    const rightTower = document.createElement('div');
+    rightTower.id = 'tower-right';
+    rightTower.className = 'side-tower';
+    rightTower.innerHTML = `
+        <div style="text-align:right; margin-bottom:20px;"><img src="https://img.icons8.com/ios-filled/50/5b9bd5/radar.png" style="width:25px;opacity:0.8"/></div>
+        <div class="tower-section">
+            <span class="tower-label">System Time (UTC)</span>
+            <div class="tower-data" id="tower-clock" style="font-size:1.4rem;">00:00:00</div>
+            <div class="tower-sub">TERRA_STANDARD_TIME</div>
+        </div>
+        <div class="tower-section">
+            <span class="tower-label">Satellite Link</span>
+            <div id="tower-data-stream" style="font-family:monospace; font-size:0.55rem; color:var(--accent2); overflow:hidden; height:120px; line-height:1.2;"></div>
+        </div>
+        <div class="tower-section">
+            <span class="tower-label">Env Factor</span>
+            <div class="tower-line" style="display:flex;justify-content:space-between;font-size:0.7rem;"><span>TEMP:</span><b id="t-temp">24°C</b></div>
+            <div class="tower-line" style="display:flex;justify-content:space-between;font-size:0.7rem;"><span>HUMI:</span><b id="t-humi">45%</b></div>
+            <div class="tower-line" style="display:flex;justify-content:space-between;font-size:0.7rem;"><span>PRES:</span><b>101.2 kPa</b></div>
+        </div>
+    `;
+    document.body.appendChild(rightTower);
+
+    // 3. 实时动画与数据逻辑
+    function updateTowers() {
+        // 更新时钟
+        const n = new Date();
+        document.getElementById('tower-clock').innerText = n.toISOString().split('T')[1].split('.')[0];
+        // 更新生理数据
+        document.getElementById('v-pulse').innerText = Math.floor(65 + Math.random()*15) + " BPM";
+        // 更新环境
+        document.getElementById('t-temp').innerText = (22 + Math.random()*4).toFixed(1) + "°C";
+        document.getElementById('t-humi').innerText = Math.floor(40 + Math.random()*10) + "%";
+        
+        // 随机数据流
+        const stream = document.getElementById('tower-data-stream');
+        const hex = "0123456789ABCDEF";
+        let line = "> " + Array.from({length:12}, () => hex[Math.floor(Math.random()*16)]).join('') + "<br>";
+        stream.innerHTML = (line + stream.innerHTML).slice(0, 1000);
+    }
+    setInterval(updateTowers, 1000);
+
+    // 神经网络波动 Canvas
+    const ctx = document.getElementById('neuralCanvas').getContext('2d');
+    let x = 0;
+    function drawNeural() {
+        ctx.fillStyle = "rgba(13,17,23,0.1)";
+        ctx.fillRect(0,0,170,60);
+        ctx.strokeStyle = "#e8a945";
+        ctx.beginPath();
+        ctx.moveTo(0, 30);
+        for(let i=0; i<170; i++) {
+            ctx.lineTo(i, 30 + Math.sin((i+x)*0.1)*15 * Math.random());
+        }
+        ctx.stroke();
+        x += 5;
+        requestAnimationFrame(drawNeural);
+    }
+    drawNeural();
+})();
+
+
+
+
+
+(function injectOnlineCounter() {
+    // 1. 在右侧侧边栏(tower-right)的顶部插入人数显示区域
+    const rightTower = document.getElementById('tower-right');
+    const counterDiv = document.createElement('div');
+    counterDiv.className = 'tower-section';
+    counterDiv.style.borderTop = 'none'; // 放在最上面
+    counterDiv.innerHTML = `
+        <span class="tower-label">Link Presence // 链路状态</span>
+        <div class="online-indicator">
+            <div class="pulse-dot"></div>
+            <div class="tower-data" id="online-count" style="color:#00ff7f; font-size:1.2rem;">1</div>
+            <div style="font-size:0.6rem; color:var(--text-lo); margin-left:5px;">OPERATORS<br>ONLINE</div>
+        </div>
+    `;
+    // 插入到右侧塔的第一个位置
+    rightTower.insertBefore(counterDiv, rightTower.firstChild);
+
+    // 2. Supabase Realtime 核心逻辑
+    const channel = sbClient.channel('online-users', {
+        config: { presence: { key: 'user_' + Math.floor(Math.random()*1000) } }
+    });
+
+    channel
+        .on('presence', { event: 'sync' }, () => {
+            const state = channel.presenceState();
+            const count = Object.keys(state).length;
+            // 更新显示数字
+            const countEl = document.getElementById('online-count');
+            if(countEl) countEl.innerText = count;
             
-            if (chartH) chartH.destroy();
-            chartH = new Chart(document.getElementById('chartHour').getContext('2d'), {
-                type: 'line',
-                data: { 
-                    labels: Array.from({length: 24}, (_, i) => i + ":00"),
-                    datasets: [{ 
-                        data: hCounts, borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.1)', 
-                        fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#ff6b6b'
-                    }] 
-                },
-                options: { 
-                    responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } },
-                    scales: { 
-                        x: { grid: { color: '#333' }, ticks: { color: '#666' } }, 
-                        y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#666' } } 
-                    } 
-                }
-            });
-
-            const dayCounts = {};
-            for(let i=6; i>=0; i--) {
-                const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-                dayCounts[(d.getMonth()+1)+"/"+d.getDate()] = 0;
+            // 在右侧数据流里刷一条日志
+            const stream = document.getElementById('tower-data-stream');
+            if(stream) {
+                stream.innerHTML = `> NEW_NODE_SYNC: OK (TOTAL:${count})<br>` + stream.innerHTML;
             }
-            records.forEach(r => {
-                const d = new Date(r.created_at);
-                const label = (d.getMonth()+1)+"/"+d.getDate();
-                if(dayCounts.hasOwnProperty(label)) dayCounts[label]++;
-            });
-
-            if (chartD) chartD.destroy();
-            chartD = new Chart(document.getElementById('chartDay').getContext('2d'), {
-                type: 'bar',
-                data: { 
-                    labels: Object.keys(dayCounts), 
-                    datasets: [{ data: Object.values(dayCounts), backgroundColor: '#ff6b6b', borderColor: '#ff6b6b', borderWidth: 1 }] 
-                },
-                options: { 
-                    responsive: true, maintainAspectRatio: false, 
-                    scales: { x: { ticks: { color: '#666' } }, y: { ticks: { color: '#666' } } }
-                }
-            });
-        }
-
-        setInterval(() => {
-            jokeProgress += 100;
-            document.getElementById('prog-bar').style.width = (jokeProgress / 15000 * 100) + "%";
-            if (jokeProgress >= 15000) {
-                document.getElementById('joke-text').innerHTML = JOKES[Math.floor(Math.random()*JOKES.length)];
-                jokeProgress = 0;
+        })
+        .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                await channel.track({ online_at: new Date().toISOString() });
             }
-        }, 100);
+        });
+})();
 
-        fetchData(); fetchMessages();
-        document.getElementById('joke-text').innerHTML = JOKES[0];
-        setInterval(fetchData, 30000);
-    </script>
+
+
+
+</script>
 </body>
 </html>
