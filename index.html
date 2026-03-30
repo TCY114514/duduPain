@@ -3,87 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
-    <title>🧅 大葱肚肚痛中心 | v12.0 极客分线</title>
+    <title>💥 大葱又痛了吗？！ | Scallion Pain Hub v14.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #ff6b6b; --bg: #fff9db; --card-bg: #ffffff; --text: #495057; --accent: #ffd43b; --leaf: #51cf66; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'PingFang SC', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 100%; max-width: 500px; padding-bottom: 40px; }
-        .card { background: var(--card-bg); width: 100%; border-radius: 25px; padding: 20px; box-shadow: 0 10px 25px rgba(255, 107, 107, 0.1); margin-bottom: 15px; border: 3px solid #fff; position: relative; }
-        
-        /* 核心计数 */
-        #btn-main {
-            width: 130px; height: 130px; border-radius: 50%; border: none;
-            background: linear-gradient(135deg, #ff8787, #fa5252); color: white; font-size: 1.2rem; font-weight: bold; cursor: pointer; 
-            box-shadow: 0 8px 0 #c92a2a; outline: none; transition: 0.1s; margin: 10px 0;
+        :root { 
+            --p: #ff6b6b; --p-dark: #c92a2a; --bg: #f8f9fa; 
+            --glass: rgba(255, 255, 255, 0.85); --border: rgba(255, 255, 255, 0.6);
+            --text: #2d3436; --leaf: #20bf6b; --accent: #f7b731; --sky: #0984e3;
         }
-        #btn-main:active { transform: translateY(6px); box-shadow: 0 2px 0 #c92a2a; }
-        #count-val { font-size: 4rem; color: var(--primary); font-weight: 900; line-height: 1; }
+        
+        /* 动态昼夜模式 */
+        body.dark-mode {
+            --bg: #1a1a1a; --glass: rgba(45, 52, 54, 0.9); --border: rgba(255, 255, 255, 0.1);
+            --text: #dfe6e9;
+        }
 
-        /* 📝 独立分表留言板 */
-        .board-container { background: #fdfae5; border: 2px solid var(--accent); border-radius: 20px; padding: 15px; margin: 15px 0; text-align: left; }
-        .board-title { font-size: 0.8rem; font-weight: bold; color: #e67e22; margin-bottom: 10px; display: flex; justify-content: space-between; }
-        #msg-scroll-box { height: 120px; overflow-y: auto; font-size: 0.85rem; border-radius: 10px; padding: 10px; background: white; border: 1px inset #eee; scroll-behavior: smooth; }
-        .msg-item { padding: 6px 0; border-bottom: 1px dashed #eee; line-height: 1.4; display: flex; flex-direction: column; }
-        .msg-meta { font-size: 0.65rem; color: #999; margin-bottom: 2px; }
-        .msg-author { color: var(--leaf); font-weight: bold; font-family: monospace; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; border-radius: 20px; }
+        
+        body { 
+            font-family: 'JetBrains Mono', 'PingFang SC', sans-serif; 
+            background: var(--bg); color: var(--text); margin: 0; padding: 20px; 
+            min-height: 100vh; transition: background 0.5s ease;
+        }
 
-        /* ⌨️ 留言输入 */
-        .input-group { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
-        input { border: 2px solid #eee; border-radius: 10px; padding: 10px; font-size: 0.8rem; outline: none; }
-        input:focus { border-color: var(--accent); }
-        #in-content { flex: 1 1 100%; }
-        #in-author { flex: 1; }
-        #btn-send { background: var(--leaf); color: white; border: none; border-radius: 10px; padding: 0 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        #btn-send:active { background: #2b8a3e; transform: scale(0.95); }
+        .app-shell {
+            width: 100%; max-width: 1300px; margin: 0 auto;
+            display: grid; gap: 25px; grid-template-columns: 1fr;
+        }
 
-        /* 进度条笑话 */
-        .joke-card { border: 2px solid var(--accent); text-align: left; position: relative; overflow: hidden; padding-bottom: 25px; }
-        .prog-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 6px; background: #eee; }
-        #prog-fill { width: 0%; height: 100%; background: var(--accent); }
+        @media (min-width: 1000px) {
+            .app-shell { grid-template-columns: 400px 1fr; }
+            .side-panel { position: sticky; top: 20px; height: calc(100vh - 40px); }
+        }
 
-        .chart-box { height: 150px; width: 100%; }
-        .hist-list { max-height: 100px; overflow-y: auto; font-size: 0.75rem; text-align: left; background: #f8f9fa; border-radius: 10px; padding: 10px; }
+        /* 顶部主旨 Banner */
+        .main-header {
+            grid-column: 1 / -1; text-align: center; padding: 40px 20px;
+            background: linear-gradient(135deg, #ff6b6b, #fa5252); color: white;
+            box-shadow: 0 15px 30px rgba(255, 107, 107, 0.2);
+        }
+        .main-header h1 { margin: 0; font-size: 2.2rem; font-weight: 900; letter-spacing: -1px; }
+        .main-header p { opacity: 0.9; font-size: 1rem; margin-top: 10px; font-weight: 500; }
+
+        /* 通用卡片 */
+        .glass-card {
+            background: var(--glass); backdrop-filter: blur(15px);
+            border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+            padding: 25px; position: relative; overflow: hidden;
+        }
+
+        /* 核心痛感按钮 */
+        .hero-unit { text-align: center; }
+        #btn-main {
+            width: 200px; height: 200px; border: 10px solid #fff;
+            background: radial-gradient(circle, #ff8787, #fa5252);
+            color: white; font-size: 1.5rem; font-weight: 900; cursor: pointer;
+            box-shadow: 0 25px 50px rgba(255, 107, 107, 0.4);
+            transition: 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); margin: 20px 0;
+        }
+        #btn-main:active { transform: scale(0.85); box-shadow: 0 10px 20px rgba(255, 107, 107, 0.2); }
+        #count-val { font-size: 5rem; font-weight: 900; color: var(--p); line-height: 1; }
+
+        /* 极客留言板 - 现代风格 */
+        .board-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .chat-window { 
+            height: 400px; overflow-y: auto; background: rgba(0,0,0,0.02); 
+            padding: 15px; border-radius: 12px; border: 1px inset rgba(0,0,0,0.05);
+        }
+        .msg-card {
+            background: white; padding: 12px 18px; margin-bottom: 15px;
+            border-left: 5px solid var(--accent); position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        .msg-card.geek { border-left-color: var(--leaf); }
+        .msg-info { font-size: 0.7rem; color: #999; margin-bottom: 5px; font-weight: bold; }
+
+        /* 输入系统 */
+        .input-bar { display: grid; grid-template-columns: 1fr 120px; gap: 10px; margin-top: 15px; }
+        input, button { padding: 15px; font-size: 0.9rem; border: none; outline: none; }
+        input { background: white; border: 1px solid #eee; }
+        button#btn-send { background: var(--text); color: white; font-weight: 900; cursor: pointer; }
+
+        /* 泰拉笑话区域 */
+        .joke-zone { border-top: 5px solid var(--accent); }
+        #joke-text { font-size: 0.95rem; line-height: 1.8; color: var(--text); min-height: 100px; }
+        .progress-container { height: 8px; width: 100%; background: #eee; border-radius: 10px; margin-top: 15px; }
+        #progress-bar { height: 100%; width: 0%; background: var(--accent); border-radius: 10px; transition: 0.1s linear; }
+
+        /* 调试器风格的历史记录 */
+        .log-table { width: 100%; font-size: 0.8rem; border-collapse: collapse; }
+        .log-table td { padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.03); }
+        .tag-loc { color: var(--sky); font-weight: bold; background: rgba(9, 132, 227, 0.1); padding: 2px 8px; }
+
+        /* 成就弹窗 */
+        #achieve-toast {
+            position: fixed; bottom: 30px; right: 30px; padding: 20px 30px;
+            background: var(--text); color: white; transform: translateX(200%);
+            transition: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 999;
+        }
+        #achieve-toast.show { transform: translateX(0); }
+
+        h2 { font-size: 1rem; color: #999; text-transform: uppercase; letter-spacing: 2px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="card">
-            <h2 style="margin:0; font-size: 1.1rem; color: var(--leaf);">🟢 SCALLION CENTER v12.0</h2>
-            <button id="btn-main"><span>💥</span>肚肚痛了</button>
-            <div>今日累计 <span id="count-val">0</span> 次 🧅</div>
-            <div class="chart-box"><canvas id="chartHour"></canvas></div>
-        </div>
+    <div id="achieve-toast">🏆 <span id="ach-text">解锁成就</span></div>
 
-        <div class="card">
-            <div class="board-container">
-                <div class="board-title"><span>💬 极客实时留言板</span><span id="sync-tag">⚡ 联机中</span></div>
-                <div id="msg-scroll-box">通讯连接中... 📡</div>
-                <div class="input-group">
-                    <input type="text" id="in-content" placeholder="输入极客留言...">
-                    <input type="text" id="in-author" placeholder="著名字号 (极客)">
-                    <button id="btn-send">发送</button>
+    <div class="app-shell">
+        <header class="main-header">
+            <h1>💥 大葱又痛了吗？！</h1>
+            <p>Scallion Pain Management & Geek Communication Terminal v14.0</p>
+        </header>
+
+        <div class="side-panel">
+            <div class="glass-card hero-unit">
+                <h2>Terminal Counter</h2>
+                <div id="count-val">0</div>
+                <p style="font-size: 0.75rem; margin-top: -10px;">今日痛感实时波动指数</p>
+                <button id="btn-main">点我记录一次痛</button>
+                <div style="height: 180px;"><canvas id="chartHour"></canvas></div>
+            </div>
+
+            <div class="glass-card joke-zone" style="margin-top:20px;">
+                <div style="display:flex; justify-content:space-between;">
+                    <h2>Terra Jokes 📡</h2>
+                    <span id="joke-timer" style="font-size: 0.7rem; color: var(--accent);">Next in 15s</span>
                 </div>
+                <div id="joke-text">正在从泰拉监听情报站接收广播...</div>
+                <div class="progress-container"><div id="progress-bar"></div></div>
             </div>
         </div>
 
-        <div class="card joke-card">
-            <div style="font-weight: bold; color: #e67e22; font-size: 0.85rem; margin-bottom: 8px;">🎭 泰拉地域偏见大赏</div>
-            <div id="joke-text" style="font-size: 0.85rem; line-height: 1.5; min-height: 60px;">载入解密中... 🕵️‍♀️</div>
-            <div class="prog-bg"><div id="prog-fill"></div></div>
-        </div>
+        <div class="main-content">
+            <div class="glass-card">
+                <div class="board-header">
+                    <h2>Geek Message Board</h2>
+                    <span style="color:var(--leaf); font-size: 0.7rem; font-weight: bold;">● LIVE SYNCING</span>
+                </div>
+                <div class="chat-window" id="msg-box">正在接入极客加密信道...</div>
+                <div class="input-bar">
+                    <input type="text" id="in-content" placeholder="输入极客留言内容...">
+                    <input type="text" id="in-author" placeholder="著名字号">
+                </div>
+                <button id="btn-send" style="width:100%; margin-top:10px;">🚀 发送至全频道</button>
+            </div>
 
-        <div class="card">
-            <h3 style="margin:0; font-size:0.85rem; color:#999;">📅 最近七日活跃分布图</h3>
-            <div class="chart-box"><canvas id="chartDay"></canvas></div>
-        </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:25px; margin-top:25px;">
+                <div class="glass-card">
+                    <h2>7-Day Pain Trend</h2>
+                    <div style="height: 200px;"><canvas id="chartDay"></canvas></div>
+                </div>
+                <div class="glass-card">
+                    <h2>Activity Logs</h2>
+                    <div style="height: 200px; overflow-y: auto;">
+                        <table class="log-table" id="log-table"></table>
+                    </div>
+                </div>
+            </div>
 
-        <div class="card">
-            <h3 style="margin:0; font-size:0.85rem; color:#999;">📜 历史位置轨迹</h3>
-            <div id="hist-list" class="hist-list">...</div>
+            <div class="glass-card" style="margin-top:25px;">
+                <h2>Geek Toolbox</h2>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button onclick="toggleDarkMode()" style="background:#eee; color:#333; padding:10px 20px;">🌗 切换昼夜模式</button>
+                    <button onclick="exportLogs()" style="background:#eee; color:#333; padding:10px 20px;">📥 导出 CSV 日志</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -91,73 +177,134 @@
         const SB_URL = "https://nbhaqiynakkdlequbpbh.supabase.co"; 
         const SB_KEY = "sb_publishable_MfHndIpykrX79UrvosT9Nw_JxCYYfbp"; 
         const sbClient = supabase.createClient(SB_URL, SB_KEY);
-        
-        let chartH = null, chartD = null, jokeProgress = 0;
-        const JOKES = [
-            "<b>叙拉古：</b>永远不要在意面上挤番茄酱，否则会被塞进油桶。🥫",
-            "<b>拉特兰：</b>纠纷全靠炸弹回声，爆炸不够清脆说明信仰不足。💣",
-            "<b>哥伦比亚：</b>路边的猫都能给你讲三分钟创投计划。💼",
-            "<b>乌萨斯：</b>这里没有感冒，只有伏特加纯度不够。🥃"
-        ];
-        const LOCS = ["阿戈尔 🌊", "哥伦比亚 🇺🇸", "叙拉古 🐺", "炎国 🐉", "龙门 🏮", "维多利亚 🦁", "拉特兰 😇"];
 
-        // --- 功能：发送留言到 message 表 ---
+        // --- 资源库：90个地名 (覆盖泰拉全境及细分地块) ---
+        const LOCS = [
+            "龙门·近卫局 👮", "龙门·贫民窟 🍜", "龙门·商业区 🏮", "罗德岛·本舰 🚢", "罗德岛·医疗部 💉", "罗德岛·食堂 🥗", 
+            "叙拉古·帕勒莫 🐺", "叙拉古·新沃尔西尼 🍕", "卡西米尔·大骑士领 🐴", "卡西米尔·商业联合会 💰", "卡西米尔·零号竞技场 🏟️",
+            "哥伦比亚·特里蒙特 🏙️", "哥伦比亚·拓荒地 🌵", "哥伦比亚·科学考察站 🧬", "炎国·尚蜀 🍵", "炎国·玉门 ⚔️", "炎国·勾吴 🌊",
+            "乌萨斯·切尔诺伯格 🐻", "乌萨斯·圣骏堡 🏰", "乌萨斯·极北荒原 ❄️", "维多利亚·伦蒂尼姆 🦁", "维多利亚·郡立监狱 🔒",
+            "拉特兰·第六枢机 😇", "拉特兰·公证所 ⚖️", "拉特兰·甜品店 🍮", "阿戈尔·深海 🌊", "伊比利亚·愚人号 ⚓", "伊比利亚·黄金大教堂 ⛪",
+            "谢拉格·希瓦艾什领 ❄️", "谢拉格·圣山 🏔️", "萨米·无穷冰原 🌌", "卡兹戴尔·卡兹戴尔城 👿", "卡兹戴尔·碎片大厦 🏗️",
+            "汐斯塔·黑曜石沙滩 🏖️", "玻利瓦尔·多索雷斯 🍹", "萨尔贡·帕夏领 🦂", "萨尔贡·雨林 🌴", "莱塔尼亚·夕照区 🎵", "莱塔尼亚·威廉大学 🎓",
+            "米诺斯·体育场 🐂", "东国·樱花林 🌸", "雷姆必拓·矿场 🐰", "维多利亚·诺曼底 🛳️", "哥伦比亚·白沙滩 🏖️", "龙门·中环总署 🏢",
+            "叙拉古·西西里亚 🍷", "炎国·夕阁 ⛩️", "卡兹戴尔·深渊 🌑", "罗德岛·舰桥 🔭", "萨米·安塔鲁特 🌲", "伊比利亚·盐风城 🧂",
+            "拉特兰·中央教堂 ⛪", "谢拉格·冰原火车站 🚂", "卡西米尔·玛利亚的工坊 🛠️", "哥伦比亚·曼哈顿实验区 🧪", "乌萨斯·废弃矿井 🏚️",
+            "阿戈尔·水底都市 💎", "龙门·码头仓库 📦", "炎国·边境长城 🧱", "卡兹戴尔·佣兵营地 ⛺", "萨尔贡·遗迹 🏛️", "米诺斯·神庙 🏛️",
+            "东国·武士道场 🗡️", "雷姆必拓·核心城 🏗️", "维多利亚·格拉斯哥街道 🐱", "拉特兰·铳械工坊 🔫", "卡西米尔·骑士协会 🛡️",
+            "罗德岛·干员宿舍 🛏️", "叙拉古·歌剧院 🎭", "哥伦比亚·军事基地 🎖️", "炎国·书画院 🖌️", "乌萨斯·贵族沙龙 🎩", "谢拉格·雪山神庙 🗻",
+            "萨米·观星台 🔭", "汐斯塔·音乐节现场 🎸", "玻利瓦尔·总统府 🏛️", "雷姆必拓·钻井平台 🔨", "伊比利亚·灯塔 🕯️", "龙门·天际线广场 🌆",
+            "炎国·江南水乡 🛶", "叙拉古·葡萄庄园 🍇", "哥伦比亚·电子游戏中心 🎮", "乌萨斯·雪原列车 🚞", "维多利亚·蒸汽工厂 ⚙️", "拉特兰·巧克力工厂 🍫",
+            "罗德岛·后勤部 🚚", "谢拉格·商业街 🏪", "阿戈尔·珊瑚礁 🐙", "卡西米尔·酒吧 🍻", "炎国·点心铺 🥟"
+        ];
+
+        // --- 资源库：20个地狱笑话 (泰拉版) ---
+        const JOKES = [
+            "<b>叙拉古：</b>永远不要在意面上挤番茄酱，除非你想尝试一下被塞进油桶里沉入荒野地底的滋味。🥫",
+            "<b>拉特兰：</b>拉特兰人解决邻里纠纷的方式非常简单——比谁家炸弹的回声更好听。炸不掉的都是异教徒。💣",
+            "<b>哥伦比亚：</b>在这里，流浪猫都能给你讲三分钟的“源石风险投资”计划。如果你不听，它会试图起诉你。💼",
+            "<b>乌萨斯：</b>乌萨斯人的字典里没有“感冒”这个词，只有“伏特加纯度不够”和“今天的风儿还不够喧嚣”。🥃",
+            "<b>阿戈尔：</b>阿戈尔人看电影不看剧情，只看屏幕像素。如果水波纹不够圆润，他们会集体退场投诉。🌊",
+            "<b>卡西米尔：</b>卡西米尔的骑士不一定骑马，但一定得会摆POSE。如果你的闪光灯亮度不足，你就不配比赛。📸",
+            "<b>龙门：</b>龙门人衡量友谊的标准很简单——如果你能帮我在贫民窟抢到一个限量版的叉烧包。🥟",
+            "<b>罗德岛：</b>博士在指挥时最怕听到的不是‘敌袭’，而是医疗部凯尔希医生的‘你还有很多报告没写’。📑",
+            "<b>维多利亚：</b>在伦蒂尼姆，你可以在一天内经历四季，以及三次针对议会的和平示威，和一次必然会迟到的下午茶。☕",
+            "<b>谢拉格：</b>如果你在谢拉格迷路了，别担心，只要大喊一声‘银灰老爷万岁’，就会有穿黑西装的干员带你去喝咖啡。❄️",
+            "<b>萨米：</b>萨米人从不担心迷路，他们只担心天上的北极星今天是不是又在偷偷跟他们说话。🌌",
+            "<b>伊比利亚：</b>在伊比利亚，如果你看到一个巨大的灯塔，别乱跑，那可能不是为了指引船只，是为了震慑章鱼。🕯️",
+            "<b>莱塔尼亚：</b>这里的教授可以在讲量子力学时顺便用大提琴拉出一首致郁曲，让全班同学当场申请休学。🎻",
+            "<b>卡兹戴尔：</b>这里的拆迁办非常高效，只要在你想拆的房子上贴一张‘萨卡兹秘密基地’的纸条，第二天连地基都没了。🏗️",
+            "<b>玻利瓦尔：</b>这里的总统选举很简单，谁能在多索雷斯的水上摩托比赛中不掉下来，谁就能执政一周。🍹",
+            "<b>米诺斯：</b>如果你在这里看到一群人在追一头牛，别奇怪，那可能只是他们的早操。🐂",
+            "<b>东国：</b>在东国，如果你不会写俳句，你甚至没法去便利店买一盒纳豆。🌸",
+            "<b>雷姆必拓：</b>这里的兔子不仅会打洞，还会用电钻在你的支票本上钻个洞。🐰",
+            "<b>汐斯塔：</b>这里的海滩非常安全，除了偶尔会有岩浆流入海里把你的泳裤烫焦之外，一切都很完美。🏖️",
+            "<b>炎国：</b>炎国人喝茶讲究意境，如果今天的云雾不够飘逸，这杯毛尖就算是白泡了。🍵"
+        ];
+
+        let chartH = null, chartD = null, jokeProgress = 0;
+        const JOKE_TIME = 15000;
+
+        // --- 核心功能 ---
+
+        // 发送留言
         document.getElementById('btn-send').onclick = async () => {
             const content = document.getElementById('in-content').value;
             const author = document.getElementById('in-author').value || "匿名极客";
             if(!content) return;
-
             const { error } = await sbClient.from('messages').insert([{ content, author }]);
             if(!error) {
                 document.getElementById('in-content').value = "";
+                showAchieve("留言已发布到公共频道 📡");
                 fetchMessages();
             }
         };
 
-        // --- 功能：点击记录痛感 ---
+        // 记录痛感
         document.getElementById('btn-main').onclick = async () => {
-            if (navigator.vibrate) navigator.vibrate(50);
-            const loc = `坐标：${LOCS[Math.floor(Math.random()*LOCS.length)]}`;
+            if (navigator.vibrate) navigator.vibrate(60);
+            const loc = LOCS[Math.floor(Math.random()*LOCS.length)];
             await sbClient.from('records').insert([{ location: loc }]);
             fetchData();
+            showAchieve(`记录成功！来自：${loc}`);
         };
 
-        // --- 功能：获取留言 ---
+        // 昼夜模式切换
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            showAchieve("界面协议已重构 🌗");
+        }
+
+        // 导出日志
+        async function exportLogs() {
+            const { data } = await sbClient.from('records').select('*').order('created_at', { ascending: false });
+            let csv = "ID,Time,Location\n";
+            data.forEach(r => csv += `${r.id},${r.created_at},${r.location}\n`);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `pain_logs_${new Date().getTime()}.csv`;
+            a.click();
+        }
+
+        // 成就弹窗
+        function showAchieve(text) {
+            const toast = document.getElementById('achieve-toast');
+            document.getElementById('ach-text').innerText = text;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        // 获取数据
         async function fetchMessages() {
-            const { data } = await sbClient.from('messages').select('*').order('created_at', { ascending: false }).limit(20);
+            const { data } = await sbClient.from('messages').select('*').order('created_at', { ascending: false }).limit(25);
             if(data) {
-                document.getElementById('msg-scroll-box').innerHTML = data.map(m => `
-                    <div class="msg-item">
-                        <div class="msg-meta"><span class="msg-author">@${m.author}</span> · ${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                document.getElementById('msg-box').innerHTML = data.map(m => `
+                    <div class="msg-card ${m.author.includes('极客')?'geek':''}">
+                        <div class="msg-info">@${m.author} · ${new Date(m.created_at).toLocaleString()}</div>
                         <div>${m.content}</div>
                     </div>
                 `).join('');
             }
         }
 
-        // --- 功能：获取统计数据 ---
         async function fetchData() {
-            try {
-                const now = new Date();
-                const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-                
-                // 1. 今日累计
-                const { count } = await sbClient.from('records').select('*', { count: 'exact', head: true }).gte('created_at', today0);
-                document.getElementById('count-val').innerText = count || 0;
+            const now = new Date();
+            const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+            
+            const { count } = await sbClient.from('records').select('*', { count: 'exact', head: true }).gte('created_at', today0);
+            document.getElementById('count-val').innerText = count || 0;
 
-                // 2. 轨迹明细
-                const { data: records } = await sbClient.from('records').select('*').order('created_at', { ascending: false }).limit(300);
-
-                if (records) {
-                    document.getElementById('hist-list').innerHTML = records.slice(0, 15).map(r => `
-                        <div style="display:flex;justify-content:space-between;padding:3px 0; border-bottom:1px dashed #eee;">
-                            <span>🕒 ${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                            <span style="color:var(--primary)">${r.location}</span>
-                        </div>
-                    `).join('');
-                    renderCharts(records, now);
-                }
-            } catch (e) {}
+            const { data: records } = await sbClient.from('records').select('*').order('created_at', { ascending: false }).limit(400);
+            if (records) {
+                document.getElementById('log-table').innerHTML = records.slice(0, 20).map(r => `
+                    <tr>
+                        <td style="color:#999">${new Date(r.created_at).toLocaleTimeString()}</td>
+                        <td><span class="tag-loc">${r.location}</span></td>
+                    </tr>
+                `).join('');
+                renderCharts(records, now);
+            }
         }
 
         function renderCharts(records, now) {
@@ -167,8 +314,8 @@
             if (chartH) chartH.destroy();
             chartH = new Chart(document.getElementById('chartHour').getContext('2d'), {
                 type: 'line',
-                data: { labels: Array.from({length: 24}, (_, i) => i + ":00"), datasets: [{ data: hCounts, borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.1)', fill: true, tension: 0.4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+                data: { labels: Array.from({length: 24}, (_, i) => i + ":00"), datasets: [{ data: hCounts, borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.1)', fill: true, tension: 0.4, pointRadius: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true } } }
             });
 
             const dayCounts = {};
@@ -184,27 +331,29 @@
             if (chartD) chartD.destroy();
             chartD = new Chart(document.getElementById('chartDay').getContext('2d'), {
                 type: 'line',
-                data: { labels: Object.keys(dayCounts), datasets: [{ data: Object.values(dayCounts), borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.1)', fill: true, tension: 0.3 }] },
+                data: { labels: Object.keys(dayCounts), datasets: [{ data: Object.values(dayCounts), borderColor: '#20bf6b', backgroundColor: 'rgba(32,191,107,0.1)', fill: true, tension: 0.3 }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
         }
 
-        function handleJoke() {
+        // 笑话循环
+        setInterval(() => {
             jokeProgress += 100;
-            document.getElementById('prog-fill').style.width = (jokeProgress / 15000 * 100) + "%";
-            if (jokeProgress >= 15000) {
+            const bar = document.getElementById('progress-bar');
+            bar.style.width = (jokeProgress / JOKE_TIME * 100) + "%";
+            document.getElementById('joke-timer').innerText = `Next in ${Math.ceil((JOKE_TIME - jokeProgress)/1000)}s`;
+
+            if (jokeProgress >= JOKE_TIME) {
                 document.getElementById('joke-text').innerHTML = JOKES[Math.floor(Math.random()*JOKES.length)];
                 jokeProgress = 0;
             }
-        }
+        }, 100);
 
         // 初始化
-        fetchData();
-        fetchMessages();
+        fetchData(); fetchMessages();
         document.getElementById('joke-text').innerHTML = JOKES[0];
         setInterval(fetchData, 30000);
-        setInterval(fetchMessages, 10000); // 10秒刷一次留言
-        setInterval(handleJoke, 100);
+        setInterval(fetchMessages, 10000);
     </script>
 </body>
 </html>
