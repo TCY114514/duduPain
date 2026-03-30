@@ -1,8 +1,11 @@
-📂 SCALLION-OS: RHODES ISLAND MEDICAL TERMINAL💥 [ Project: PAIN-MONITOR-V20 ]STATUS: ACTIVE AUTHOR: DR. SCALLION AUTH_LEVEL: ELITE🛰️ SYSTEM OVERVIEW // 系统概览本终端是部署在 罗德岛本舰 的分布式痛感监测节点，旨在通过 PRTS 链路实时追踪精英干员（及广大极客）的物理/精神痛感指数。系统集成了生理体征监测、泰拉环境扫描以及跨区域信道同步功能。Plaintext[ LOGIN SUCCESSFUL ]
-> Initializing Neural Pulse... OK
-> Synchronizing Supabase Cluster... OK
-> Connecting to Terra Satellite... OK
-⚡ CORE MODULES // 核心模块0x01 | 实时痛感脉冲 (Pain Pulse)Manual Trigger: 通过主控面板手动上报痛感，数据将实时上传至云端。Auto-Diagnosis: 集成自动诊断逻辑，基于上报位置计算源石浓度与神经脉冲。Tactical Widget: 非阻塞式侧边滑窗反馈，遵循“阅后即焚”情报原则。0x02 | 战术塔台监控 (Side-Tower Infrastructure)Left Wing (Medical): 实时神经网络波形图 (Canvas-based) + 感染深度监测。Right Wing (Intel): 泰拉环境扫描仪 (TEMP/ALT/PRES) + 实时十六进制数据流日志。0x03 | 链路同步与社交 (Link Presence)Presence Engine: 基于 Supabase Realtime 的实时在线干员人数统计。Geek Channel: 跨地域匿名通讯信道，支持各移动端/PC端同步。🛠️ TECH STACK // 技术栈"It's not just code; it's a way of survival."ComponentTechnologyFrontendPure HTML5 / CSS3 (Grid & Flex) / Vanilla JSVisualsChart.js / Canvas API / Rajdhani FontDatabaseSupabase (PostgreSQL + Realtime Presence)StylingArknights Aesthetic / Steampunk Overload🚀 DEPLOYMENT // 部署指南1. 克隆终端Bashgit clone https://github.com/your-username/scallion-os-v20.git
-2. 配置密钥在 index.html 中填入你的 Supabase 凭据：JavaScriptconst SB_URL = "YOUR_SUPABASE_URL";
-const SB_KEY = "YOUR_SUPABASE_ANON_KEY";
-3. 开启服务该系统为单页面应用 (SPA)，只需直接运行 index.html。Warning: 建议使用 PC 端宽屏以获得完整的“战术塔台”视觉体验。📜 OPERATOR PROTOCOL // 操作协议禁止过载: 频繁点击“上报”按钮可能导致 PRTS 警报。保持在线: 在线人数统计是罗德岛士气的重要指标。极客共鸣: 欢迎在信道内发布技术观点或泰拉世界情报。⚠️ DISCLAIMER // 免责声明本系统仅供个人痛感记录使用，若源石感染指数异常，请及时联系医疗部 凯尔希(Kal'tsit) 医生。[ END OF FILE ]EOF_MARKER: 0xDEADBEEF
+📑 项目简介：SCALLION-OS v20.0
+Scallion-OS 是一款专为极客干员设计的高集成度医疗监测终端。它通过模拟罗德岛（Rhodes Island）PRTS 架构，将碎片化的痛感数据转化为结构化的战术情报。
+
+核心特性：
+📡 实时链路同步：基于 Supabase Realtime 引擎，实现跨地域干员在线状态感知与痛感脉冲同步。
+
+🩺 战术塔台交互：全高度侧边栏集成 Neural Wave 神经网络波动图、生理体征监控及卫星数据流，提供全沉浸式驾驶舱视觉体验。
+
+⚡ 非阻塞诊断反馈：自适应侧边滑窗（Tactical Widget）实时反馈源石活性浓度与诊断建议，确保任务处理的高效性。
+
+📱 响应式终端适配：原生支持 PC 端“战术大屏”与移动端“便携终端”模式切换，随时随地接入监测网络。
