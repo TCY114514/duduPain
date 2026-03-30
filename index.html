@@ -805,13 +805,47 @@
     }
 
     async function fetchData() {
-        const now = new Date();
-        const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-        const { count } = await sbClient.from('records').select('*', { count: 'exact', head: true }).gte('created_at', today0);
-        document.getElementById('count-val').innerText = count || 0;
-        const { data: records } = await sbClient.from('records').select('*').order('created_at', { ascending: false }).limit(400);
-        if (records) renderCharts(records, now);
+    const now = new Date();
+    
+    // 1. 获取今日总数（保持原样，这个很快）
+    const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const { count: todayCount } = await sbClient.from('records').select('*', { count: 'exact', head: true }).gte('created_at', today0);
+    document.getElementById('count-val').innerText = todayCount || 0;
+
+    // 2. 分页获取所有数据
+    let allRecords = [];
+    let from = 0;
+    const step = 1000; // 每页抓取数量
+    let hasMore = true;
+
+    while (hasMore) {
+        const { data, error } = await sbClient
+            .from('records')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(from, from + step - 1);
+
+        if (error || !data || data.length === 0) {
+            hasMore = false;
+        } else {
+            allRecords = allRecords.concat(data);
+            if (data.length < step) {
+                hasMore = false; // 抓完了
+            } else {
+                from += step;
+            }
+        }
+        
+        // 安全阀：防止数据量过大导致死循环或浏览器崩溃
+        if (allRecords.length >= 10000) break; 
     }
+
+    // 3. 渲染图表和档案
+    if (allRecords.length > 0) {
+        renderCharts(allRecords, now);
+        if (typeof renderArchive === 'function') renderArchive(allRecords);
+    }
+}
 
     function renderCharts(records, now) {
         const hCounts = Array(24).fill(0);
