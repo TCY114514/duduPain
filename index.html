@@ -136,29 +136,88 @@
         };
 
         async function fetchData() {
-            // 1. 调用 RPC 突破 1000 限制获取今日总数
-            const { data: count } = await sbClient.rpc('get_today_count');
-            document.getElementById('count-val').innerText = count || 0;
+    try {
+        // 1. 获取今日总数 (RPC)
+        const { data: count } = await sbClient.rpc('get_today_count');
+        document.getElementById('count-val').innerText = count || 0;
 
-            // 2. 获取最近数据用于渲染 (限制 500 条保证速度)
-            const { data: records } = await sbClient.from('records').select('*').order('created_at', { ascending: false }).limit(500);
-            if (!records) return;
+        // 2. 获取每小时统计数据 (RPC) - 这解决了折线图不准的问题
+        const { data: hourlyStats } = await sbClient.rpc('get_hourly_stats');
 
-            const today = new Date().toDateString();
-            const todayRecords = records.filter(r => new Date(r.created_at).toDateString() === today);
+        // 3. 获取最近 50 条用于显示历史列表 (普通查询即可)
+        const { data: recentRecords } = await sbClient
+            .from('records')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
 
-            // 3. 评价逻辑
-            let evalTxt = count > 1433223 ? "🚑 <b style='color:red'>鬼手级别</b>：让大葱痛到这辈子玩卫戍协议抓不到大C 转头发现自家大C队友人手8个精锐" : 
-                         count > 100 ? "💀 <b>天灾级别</b>" : count > 50 ? "🌋 <b>高危</b>" : count > 10 ? "🔥 <b>中危</b>" : "🌱 <b>正常</b>";
-            document.getElementById('report-text').innerHTML = `<b>今日累计：</b>${count}次<br><b>评价：</b>${evalTxt}`;
+        // --- 更新评价逻辑 ---
+        let evalTxt = count > 1433223 ? "🚑 <b style='color:red'>鬼手级别</b>：让大葱痛到这辈子玩卫戍协议抓不到大C 转头发现自家大C队友人手8个精锐" : 
+                     count > 500 ? "💀 <b>天灾级别</b>" : count > 100 ? "🌋 <b>高危</b>" : "🌱 <b>正常</b>";
+        document.getElementById('report-text').innerHTML = `<b>今日累计：</b>${count}次<br><b>评价：</b>${evalTxt}`;
 
-            // 4. 历史记录 (50条)
-            document.getElementById('history-list').innerHTML = records.slice(0, 50).map(r => `
-                <div class="history-item"><span>🕒 ${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><span class="loc-tag">${r.location}</span></div>
+        // --- 更新历史列表 ---
+        if (recentRecords) {
+            document.getElementById('history-list').innerHTML = recentRecords.map(r => `
+                <div class="history-item">
+                    <span>🕒 ${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                    <span class="loc-tag">${r.location}</span>
+                </div>
             `).join('');
-
-            renderCharts(todayRecords, records);
         }
+
+        // --- 更新图表 (传入新的统计数据) ---
+        renderCharts(hourlyStats);
+
+    } catch (err) {
+        console.error("数据链路同步失败:", err);
+    }
+}
+
+// 修改后的图表渲染函数
+function renderCharts(hourlyStats) {
+    const hCtx = document.getElementById('chartHour').getContext('2d');
+    
+    // 初始化 24 小时数据为 0
+    const hData = Array(24).fill(0);
+    // 将数据库返回的统计结果填入数组
+    if (hourlyStats) {
+        hourlyStats.forEach(item => {
+            if (item.hour_val >= 0 && item.hour_val < 24) {
+                hData[item.hour_val] = item.count_val;
+            }
+        });
+    }
+    
+    // 只显示到当前小时
+    const currentHour = new Date().getHours();
+    const displayData = hData.slice(0, currentHour + 1);
+    const labels = displayData.map((_, i) => i + ":00");
+
+    if (chartH) chartH.destroy();
+    chartH = new Chart(hCtx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '痛感频率',
+                data: displayData,
+                borderColor: '#ff6b6b',
+                backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            }
+        }
+    });
+}
 
         function renderCharts(todayRecs, allRecs) {
             const hCtx = document.getElementById('chartHour').getContext('2d'), dCtx = document.getElementById('chartDay').getContext('2d');
