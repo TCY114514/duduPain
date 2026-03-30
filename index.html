@@ -664,7 +664,7 @@
                         </div>
                         <div class="stat-card">
                             <div class="stat-label">同步间隔</div>
-                            <div class="stat-val">30s</div>
+                            <div class="stat-val">10s</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-label">系统版本</div>
@@ -939,7 +939,7 @@
     fetchData();
     fetchMessages();
     document.getElementById('joke-text').innerHTML = JOKES[0];
-    setInterval(fetchData, 30000);
+    setInterval(fetchData, 10000);
 
 // 在不破坏原有 index.html 逻辑的前提下注入新交互
 (function injectCoolFeatures() {
