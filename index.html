@@ -3,178 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
-    <title>肚肚痛监测站 💢 | Scallion Protocol v4.5 Final</title>
+    <title>肚肚痛监测站 💢 | Scallion Protocol v3.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #ff6b6b; --bg: #fff9db; --card-bg: #ffffff; --text: #495057; --accent: #ffd43b; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'PingFang SC', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 1100px; display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
-        .main-col { flex: 1.2; min-width: 320px; max-width: 550px; }
-        .side-col { flex: 0.8; min-width: 320px; max-width: 400px; }
-        .card { background: var(--card-bg); width: 100%; border-radius: 25px; padding: 25px; box-shadow: 0 10px 30px rgba(255, 107, 107, 0.15); margin-bottom: 15px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.8); }
-        .joke-card { border: 2px solid var(--accent); background: #fffdf5; position: relative; min-height: 180px; }
-        .joke-header { color: #e67e22; font-weight: bold; margin-bottom: 12px; font-size: 1.1rem; border-bottom: 1px dashed var(--accent); padding-bottom: 8px; }
-        .joke-content { text-align: left; font-size: 0.9rem; line-height: 1.7; color: #6f5540; transition: opacity 0.5s; padding: 5px; }
-        .btn-wrapper { padding: 20px 0; }
+        .card { background: var(--card-bg); width: 100%; max-width: 480px; border-radius: 25px; padding: 20px; box-shadow: 0 10px 25px rgba(255, 107, 107, 0.15); margin-bottom: 15px; text-align: center; }
         #btn-main {
-            width: 140px; height: 140px; border-radius: 50%; border: none;
-            background: linear-gradient(135deg, #ff8787, #fa5252); color: white; font-size: 1.2rem; font-weight: bold; cursor: pointer; 
-            box-shadow: 0 8px 0 #c92a2a, 0 12px 25px rgba(255,107,107,0.4); transition: 0.1s; outline: none; animation: pulse 2s infinite;
+            width: 130px; height: 130px; border-radius: 50%; border: none;
+            background: linear-gradient(135deg, #ff8787, #fa5252); color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer; 
+            box-shadow: 0 8px 0 #c92a2a; outline: none; transition: 0.1s;
         }
-        #btn-main:active { transform: translateY(6px); box-shadow: 0 2px 0 #c92a2a; animation: none; }
-        #count-val { font-size: 4rem; color: var(--primary); font-weight: 900; display: block; line-height: 1; margin: 15px 0; }
-        .report { background: #fff5f5; padding: 15px; border-radius: 15px; text-align: left; border-left: 6px solid var(--primary); font-size: 0.85rem; line-height: 1.6; }
-        .history { max-height: 220px; overflow-y: auto; text-align: left; padding: 10px; border-radius: 12px; background: #f8f9fa; font-size: 0.75rem; border: 1px inset #eee; }
-        .history-item { padding: 8px 0; border-bottom: 1px dashed #ddd; display: flex; justify-content: space-between; align-items: center; }
-        .loc-tag { color: #ff6b6b; font-weight: bold; background: #ffe3e3; padding: 2px 8px; border-radius: 5px; }
-        .chart-container { height: 180px; width: 100%; margin-top: 10px; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+        #btn-main:active { transform: translateY(5px); box-shadow: 0 2px 0 #c92a2a; }
+        #count-val { font-size: 3.5rem; color: var(--primary); font-weight: 900; display: block; margin: 10px 0; }
+        .joke-card { border: 2px solid var(--accent); background: #fffdf5; text-align: left; }
+        .joke-header { color: #e67e22; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem; }
+        .joke-content { font-size: 0.85rem; line-height: 1.6; color: #6f5540; min-height: 60px; }
+        .history { max-height: 150px; overflow-y: auto; text-align: left; padding: 10px; background: #f8f9fa; font-size: 0.75rem; border-radius: 12px; margin-top: 10px; }
+        .history-item { padding: 5px 0; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; }
+        .chart-container { height: 200px; width: 100%; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="main-col">
-            <div class="card">
-                <h1>🤣 痛了吗？</h1>
-                <div class="btn-wrapper"><button id="btn-main"><span>😂</span>肚肚痛了！</button></div>
-                <div>今日累计痛感 <span id="count-val">0</span> <small style="color:#bbb">(北京时间0点刷新)</small></div>
-            </div>
-            <div class="card">
-                <h3>🕒 今日小时趋势 (UTC+8)</h3>
-                <div class="chart-container"><canvas id="chartHour"></canvas></div>
-            </div>
-            <div class="card">
-                <h3>📅 最近七日趋势</h3>
-                <div class="chart-container"><canvas id="chartDay"></canvas></div>
-            </div>
-        </div>
+    <div class="card">
+        <h1>🤣 痛了吗？</h1>
+        <div style="padding:15px 0;"><button id="btn-main">肚肚痛了！</button></div>
+        <div>今日累计痛感 <span id="count-val">0</span></div>
+        <div class="chart-container"><canvas id="myChart"></canvas></div>
+    </div>
 
-        <div class="side-col">
-            <div class="card joke-card">
-                <div class="joke-header">✨ 泰拉大陆“地域偏见”大赏</div>
-                <div id="joke-content" class="joke-content">正在载入泰拉情报...</div>
-            </div>
-            <div class="card">
-                <h3>📝 痛感日报</h3>
-                <div id="report-text" class="report">接入数据链路...</div>
-            </div>
-            <div class="card">
-                <h3>📜 历史轨迹 (最新50条)</h3>
-                <div id="history-list" class="history">加载中...</div>
-            </div>
-        </div>
+    <div class="card joke-card">
+        <div class="joke-header">✨ 泰拉地域偏见大赏</div>
+        <div id="joke-content" class="joke-content">载入中...</div>
+    </div>
+
+    <div class="card">
+        <h3>📜 最近轨迹</h3>
+        <div id="history-list" class="history">加载中...</div>
     </div>
 
     <script>
         const SB_URL = "https://nbhaqiynakkdlequbpbh.supabase.co"; 
         const SB_KEY = "sb_publishable_MfHndIpykrX79UrvosT9Nw_JxCYYfbp"; 
         const sbClient = supabase.createClient(SB_URL, SB_KEY);
-        let chartH = null, chartD = null;
+        let myChart = null;
 
-        const TERRA_LOCS = ["阿戈尔", "玻利瓦尔", "多索雷斯", "东国", "二户城", "姬户城", "新安芸市", "杜林", "际崖城", "天际城", "哥伦比亚", "麦克斯特区", "特里蒙", "提卡伦多", "纽莱堡市", "铸铁城", "加斯帕荒原", "卡西米尔", "卡瓦莱利亚基", "茨沃涅克", "黄金平原", "滴水村", "卡兹戴尔", "卡兹戴尔城", "贝罗尼村", "拉特兰", "司提望区", "安布罗修区", "法柏尔区", "莱塔尼亚", "沃伦姆德", "维谢海姆", "冬灵山脉", "雷姆必拓", "钢铁萝卜城", "铁腕城", "米诺斯", "科林尼亚", "雅赛努斯", "拉刻代蒙", "阿克罗蒂村", "萨尔贡", "阿卡胡拉", "长泉镇", "费坤城", "瓦伊凡地区", "凯尔图恩谷地", "萨米", "察帕特", "冬牙群山", "原初之地", "维多利亚", "伦蒂尼姆", "多伦郡", "小丘郡", "红脊镇", "石高原野", "乌萨斯", "圣骏堡", "切尔诺伯格", "涅瓦湖", "中心矿区", "谢拉格", "图里卡姆", "喀兰峰", "少女峰", "马特洪峰", "叙拉古", "七丘城", "新沃尔西尼", "帕勒莫", "炎国", "龙门", "尚蜀", "玉门", "勾吴城", "姜齐城", "天岳", "雷池", "伊比利亚", "盐风城", "潮石镇", "格兰法洛", "颂圣棱堡", "汐斯塔", "因非冰原", "焚风热土", "常暗裂谷", "苍白海", "阿加门", "骏鹰王国", "高卢", "檀"];
-
+        const TERRA_LOCS = ["阿戈尔", "哥伦比亚", "拉特兰", "叙拉古", "炎国", "乌萨斯", "卡西米尔", "谢拉格", "维多利亚", "萨米", "雷姆必拓", "伊比利亚", "龙门", "卡兹戴尔", "汐斯塔", "叙拉古", "玻利瓦尔"];
         const TERRA_JOKES = [
-            "<b>阿戈尔：</b>阿戈尔人看电影不看剧情，只看像素。如果水波纹不够圆润，他们会集体退场。",
-            "<b>哥伦比亚：</b>在这里，流浪猫都能给你讲三分钟的风险投资计划。不听它就起诉你。",
-            "<b>拉特兰：</b>解决邻里纠纷的方式很简单——比谁家炸弹的回声更好听。",
-            "<b>叙拉古：</b>永远不要在意面上挤番茄酱，除非你想被塞进油桶沉入地底。",
-            "<b>炎国：</b>二十岁还没开始保温杯泡枸杞，会被开除出“岁”相。",
-            "<b>乌萨斯：</b>这里没有“感冒”，只有“伏特加纯度不够”。",
-            "<b>卡西米尔：</b>竞技骑士不一定骑马，但一定得会摆POSE和开闪光灯。",
-            "<b>维多利亚：</b>就算天上掉源石，只要管家没说茶歇结束，贵族就能优雅地坐着被砸。",
-            "<b>萨米：</b>萨米人从不迷路，他们只是在和树木进行长达三天的灵魂对话。",
-            "<b>雷姆必拓：</b>如果你丢了一把扳手，去黑市看，它可能已经被改装成了自动挖矿机。",
-            "<b>伊比利亚：</b>这里的人看谁都像卧底，哪怕你只是个路过卖苹果的。",
-            "<b>罗德岛：</b>这里的人能忍受博士在嘴里泡面，还能忍受博士指挥掉线。"
+            "<b>叙拉古：</b>永远不要在意面上挤番茄酱，除非你想被塞进油桶。",
+            "<b>拉特兰：</b>解决纠纷的方式很简单——比谁家炸弹回声好听。",
+            "<b>炎国：</b>二十岁不泡枸杞会被开除出“岁”相。",
+            "<b>阿戈尔：</b>看电影只看像素，水波纹不圆润直接退场。",
+            "<b>罗德岛：</b>这里的人能忍受博士在嘴里泡面，还能忍受指挥掉线。"
         ];
 
         document.getElementById('btn-main').onclick = async () => {
-            if (navigator.vibrate) navigator.vibrate(60);
             const loc = `IP属地：${TERRA_LOCS[Math.floor(Math.random() * TERRA_LOCS.length)]}`;
             await sbClient.from('records').insert([{ location: loc }]);
             fetchData();
         };
 
         async function fetchData() {
-            try {
-                // 1. 获取今日总数 (RPC)
-                const { data: count, error: cErr } = await sbClient.rpc('get_today_count');
-                if(!cErr) document.getElementById('count-val').innerText = count || 0;
+            // 获取今天北京时间 0 点的时间戳
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayISO = today.toISOString();
 
-                // 2. 获取小时统计 (RPC)
-                const { data: hStats } = await sbClient.rpc('get_hourly_stats');
+            // 直接查询，不使用任何 RPC 函数
+            const { data, error } = await sbClient
+                .from('records')
+                .select('*')
+                .gte('created_at', todayISO)
+                .order('created_at', { ascending: false });
 
-                // 3. 获取七日统计 (RPC)
-                const { data: dStats } = await sbClient.rpc('get_daily_stats_7days');
-
-                // 4. 获取历史轨迹
-                const { data: records } = await sbClient.from('records').select('*').order('created_at', { ascending: false }).limit(50);
-
-                // 更新评价
-                let evalTxt = count > 1433223 ? "🚑 <b style='color:red'>鬼手级别</b>" : count > 200 ? "💀 <b>天灾</b>" : count > 50 ? "🌋 <b>高危</b>" : "🌱 <b>平稳</b>";
-                document.getElementById('report-text').innerHTML = `<b>今日累计：</b>${count}次<br><b>医疗评价：</b>${evalTxt}`;
-
-                if(records) {
-                    document.getElementById('history-list').innerHTML = records.map(r => `
-                        <div class="history-item">
-                            <span>🕒 ${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                            <span class="loc-tag">${r.location}</span>
-                        </div>
-                    `).join('');
-                }
-
-                if(hStats) renderHourChart(hStats);
-                if(dStats) renderDayChart(dStats);
-            } catch (e) { console.error(e); }
-        }
-
-        function renderHourChart(stats) {
-            const ctx = document.getElementById('chartHour').getContext('2d');
-            const labels = [], data = [];
-            for (let i = 0; i <= 23; i++) {
-                labels.push(i + ":00");
-                const s = stats.find(item => item.hour_val === i);
-                data.push(s ? s.count_val : 0);
+            if (error) {
+                console.error(error);
+                return;
             }
-            if (chartH) chartH.destroy();
-            chartH = new Chart(ctx, {
-                type: 'line',
-                data: { labels: labels, datasets: [{ data: data, borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.1)', fill: true, tension: 0.4 }] },
-                options: { 
-                    responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } },
-                    scales: { x: { ticks: { callback: (v, i) => i % 4 === 0 ? labels[i] : '' } }, y: { beginAtZero: true } }
-                }
-            });
+
+            // 更新总数
+            document.getElementById('count-val').innerText = data.length;
+
+            // 更新列表
+            document.getElementById('history-list').innerHTML = data.slice(0, 20).map(r => `
+                <div class="history-item">
+                    <span>🕒 ${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                    <span style="color:#ff6b6b">${r.location}</span>
+                </div>
+            `).join('');
+
+            // 更新折线图
+            renderChart(data);
         }
 
-        function renderDayChart(stats) {
-            const ctx = document.getElementById('chartDay').getContext('2d');
-            if (chartD) chartD.destroy();
-            chartD = new Chart(ctx, {
+        function renderChart(todayData) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            const dataCounts = Array(24).fill(0);
+            
+            // 统计每个小时的数量
+            todayData.forEach(r => {
+                const hour = new Date(r.created_at).getHours();
+                dataCounts[hour]++;
+            });
+
+            const currentHour = new Date().getHours();
+            const labels = Array.from({length: currentHour + 1}, (_, i) => i + ":00");
+            const finalData = dataCounts.slice(0, currentHour + 1);
+
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: stats.map(s => s.date_label),
-                    datasets: [{ data: stats.map(s => s.count_val), borderColor: '#4dabf7', backgroundColor: 'rgba(77, 171, 247, 0.1)', fill: true, tension: 0.3 }]
+                    labels: labels,
+                    datasets: [{
+                        data: finalData,
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
             });
         }
 
         function rotateJoke() {
-            const el = document.getElementById('joke-content');
-            el.style.opacity = 0;
-            setTimeout(() => {
-                el.innerHTML = TERRA_JOKES[Math.floor(Math.random() * TERRA_JOKES.length)];
-                el.style.opacity = 1;
-            }, 500);
+            document.getElementById('joke-content').innerHTML = TERRA_JOKES[Math.floor(Math.random() * TERRA_JOKES.length)];
         }
 
-        fetchData(); rotateJoke();
-        setInterval(fetchData, 30000); setInterval(rotateJoke, 15000);
+        fetchData();
+        rotateJoke();
+        setInterval(fetchData, 30000);
+        setInterval(rotateJoke, 15000);
     </script>
 </body>
 </html>
