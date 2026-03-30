@@ -1,52 +1,8 @@
-💢 Scallion Protocol (肚肚痛监测站) v1.0
-"痛觉是生命的信号，而记录是幽默的升华。" > 本项目是专门为受试者 “大葱” (Scallion) 开发的分布式痛感实时监测系统。
-
-🚀 核心架构 (Core Architecture)
-本项目采用了去中心化的数据采集与中心化可视化的混合架构：
-
-前端渲染：基于 Vanilla JS + CSS3 变量构建的响应式 UI。
-
-数据中枢：利用 Supabase 实现毫秒级的实时数据同步。
-
-地理映射：自研的 “泰拉坐标随机映射引擎”，将痛感点位实时映射至泰拉大陆（Terra） 90+ 个核心行政区。
-
-可视化层：Chart.js 双维度驱动，支持 24h 小时波动 与 7-Day 每日趋势 分析。
-
-🛠️ 关键特性 (Feature Set)
-1. 痛感实时采集
-支持移动端触觉反馈（Vibration API）。
-
-防抖动（Debounce）处理，确保在高频痛感下链路的稳定性。
-
-2. 泰拉“地域偏见”情报站
-内置多线程随机播放引擎，每 15 秒轮换一次关于泰拉大陆各地的“扎心”段子。
-
-涵盖从阿戈尔的精致到乌萨斯的伏特加等 20+ 项深度地域梗。
-
-3. 多级评估算法
-系统会根据今日累计次数自动触发不同级别的预警：
-
-Safe: 岁月静好，肚皮平稳。
-
-High Risk: 源石结晶在肚子里蹦迪。
-
-Protocol Error: 1433223 次触发 —— 激活“鬼手”级别诅咒（卫戍协议专用）。
-
-📡 部署说明 (Deployment)
-Bash
-# 克隆本项目
-git clone https://github.com/your-repo/dudu-pain.git
-
-# 关键配置信息
-# SB_URL: 接入 Supabase 云端实例
-# SB_KEY: 公钥凭证
-托管建议：建议使用 Cloudflare Pages 或腾讯云 WebHosting，以确保在中国大陆地区的极速访问。
-
-📜 协议与声明 (License)
-受试者限定：本协议仅对 大葱 生效。
-
-数据所有权：所有痛感数据归大葱所有，监测站仅负责数字化呈现。
-
-免责声明：若因段子太好笑导致痛感加剧，本系统概不负责。
-
-[SYSTEM LOG]：数据链路已就绪。大葱，请开始你的表演。
+📂 SCALLION-OS: RHODES ISLAND MEDICAL TERMINAL💥 [ Project: PAIN-MONITOR-V20 ]STATUS: ACTIVE AUTHOR: DR. SCALLION AUTH_LEVEL: ELITE🛰️ SYSTEM OVERVIEW // 系统概览本终端是部署在 罗德岛本舰 的分布式痛感监测节点，旨在通过 PRTS 链路实时追踪精英干员（及广大极客）的物理/精神痛感指数。系统集成了生理体征监测、泰拉环境扫描以及跨区域信道同步功能。Plaintext[ LOGIN SUCCESSFUL ]
+> Initializing Neural Pulse... OK
+> Synchronizing Supabase Cluster... OK
+> Connecting to Terra Satellite... OK
+⚡ CORE MODULES // 核心模块0x01 | 实时痛感脉冲 (Pain Pulse)Manual Trigger: 通过主控面板手动上报痛感，数据将实时上传至云端。Auto-Diagnosis: 集成自动诊断逻辑，基于上报位置计算源石浓度与神经脉冲。Tactical Widget: 非阻塞式侧边滑窗反馈，遵循“阅后即焚”情报原则。0x02 | 战术塔台监控 (Side-Tower Infrastructure)Left Wing (Medical): 实时神经网络波形图 (Canvas-based) + 感染深度监测。Right Wing (Intel): 泰拉环境扫描仪 (TEMP/ALT/PRES) + 实时十六进制数据流日志。0x03 | 链路同步与社交 (Link Presence)Presence Engine: 基于 Supabase Realtime 的实时在线干员人数统计。Geek Channel: 跨地域匿名通讯信道，支持各移动端/PC端同步。🛠️ TECH STACK // 技术栈"It's not just code; it's a way of survival."ComponentTechnologyFrontendPure HTML5 / CSS3 (Grid & Flex) / Vanilla JSVisualsChart.js / Canvas API / Rajdhani FontDatabaseSupabase (PostgreSQL + Realtime Presence)StylingArknights Aesthetic / Steampunk Overload🚀 DEPLOYMENT // 部署指南1. 克隆终端Bashgit clone https://github.com/your-username/scallion-os-v20.git
+2. 配置密钥在 index.html 中填入你的 Supabase 凭据：JavaScriptconst SB_URL = "YOUR_SUPABASE_URL";
+const SB_KEY = "YOUR_SUPABASE_ANON_KEY";
+3. 开启服务该系统为单页面应用 (SPA)，只需直接运行 index.html。Warning: 建议使用 PC 端宽屏以获得完整的“战术塔台”视觉体验。📜 OPERATOR PROTOCOL // 操作协议禁止过载: 频繁点击“上报”按钮可能导致 PRTS 警报。保持在线: 在线人数统计是罗德岛士气的重要指标。极客共鸣: 欢迎在信道内发布技术观点或泰拉世界情报。⚠️ DISCLAIMER // 免责声明本系统仅供个人痛感记录使用，若源石感染指数异常，请及时联系医疗部 凯尔希(Kal'tsit) 医生。[ END OF FILE ]EOF_MARKER: 0xDEADBEEF
